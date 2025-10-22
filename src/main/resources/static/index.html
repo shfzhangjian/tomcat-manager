@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dorado5项目部署和智能问数</title>
+    <style>
+        /*!
+         * Font Awesome Free 5.15.4 by @fontawesome - https://fontawesome.com
+         * License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
+         */
+        .fa,.fab,.fad,.fal,.far,.fas{-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;display:inline-block;font-style:normal;font-variant:normal;text-rendering:auto;line-height:1}.fa-lg{font-size:1.33333333em;line-height:.75em;vertical-align:-.0667em}.fa-xs{font-size:.75em}.fa-sm{font-size:.875em}.fa-1x{font-size:1em}.fa-2x{font-size:2em}.fa-3x{font-size:3em}.fa-4x{font-size:4em}.fa-5x{font-size:5em}.fa-6x{font-size:6em}.fa-7x{font-size:7em}.fa-8x{font-size:8em}.fa-9x{font-size:9em}.fa-10x{font-size:10em}.fa-fw{text-align:center;width:1.25em}.fa-ul{list-style-type:none;margin-left:2.5em;padding-left:0}.fa-ul>li{position:relative}.fa-li{left:-2em;position:absolute;text-align:center;width:2em;line-height:inherit}.fa-border{border:.08em solid #eee;border-radius:.1em;padding:.2em .25em .15em}.fa-pull-left{float:left}.fa-pull-right{float:right}.fa.fa-pull-left,i.fa-pull-left{margin-right:.3em}.fa.fa-pull-right,i.fa-pull-right{margin-left:.3em}.fa-spin{-webkit-animation:fa-spin 2s infinite linear;animation:fa-spin 2s infinite linear}.fa-pulse{-webkit-animation:fa-spin 1s infinite steps(8);animation:fa-spin 1s infinite steps(8)}@-webkit-keyframes fa-spin{0%{-webkit-transform:rotate(0);transform:rotate(0)}100%{-webkit-transform:rotate(360deg);transform:rotate(360deg)}}@keyframes fa-spin{0%{-webkit-transform:rotate(0);transform:rotate(0)}100%{-webkit-transform:rotate(360deg);transform:rotate(360deg)}}.fa-rotate-90{-webkit-transform:rotate(90deg);transform:rotate(90deg)}.fa-rotate-180{-webkit-transform:rotate(180deg);transform:rotate(180deg)}.fa-rotate-270{-webkit-transform:rotate(270deg);transform:rotate(270deg)}.fa-flip-horizontal{-webkit-transform:scaleX(-1);transform:scaleX(-1)}.fa-flip-vertical{-webkit-transform:scaleY(-1);transform:scaleY(-1)}.fa-flip-horizontal.fa-flip-vertical{-webkit-transform:scale(-1);transform:scale(-1)}:root .fa-rotate-90,:root .fa-rotate-180,:root .fa-rotate-270,:root .fa-flip-horizontal,:root .fa-flip-vertical{display:inline-block}.fa-stack{display:inline-block;height:2em;line-height:2em;position:relative;vertical-align:middle;width:2.5em}.fa-stack-1x,.fa-stack-2x{left:0;position:absolute;text-align:center;width:100%}.fa-stack-1x{line-height:inherit}.fa-stack-2x{font-size:2em}.fa-inverse{color:#fff}.sr-only{border:0;clip:rect(0,0,0,0);height:1px;margin:-1px;overflow:hidden;padding:0;position:absolute;width:1px}.sr-only-focusable:active,.sr-only-focusable:focus{clip:auto;height:auto;margin:0;overflow:visible;position:static;width:auto}@font-face{font-family:"Font Awesome 5 Brands";font-style:normal;font-weight:400;font-display:block;src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-brands-400.eot);src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-brands-400.eot?#iefix) format("embedded-opentype"),url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-brands-400.woff2) format("woff2"),url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-brands-400.woff) format("woff"),url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-brands-400.ttf) format("truetype"),url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-brands-400.svg#fontawesome) format("svg")}.fab{font-family:"Font Awesome 5 Brands"}@font-face{font-family:"Font Awesome 5 Free";font-style:normal;font-weight:400;font-display:block;src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-regular-400.eot);src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-regular-400.eot?#iefix) format("embedded-opentype"),url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-regular-400.woff2) format("woff2"),url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-regular-400.woff) format("woff"),url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-regular-400.ttf) format("truetype"),url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-regular-400.svg#fontawesome) format("svg")}.far{font-family:"Font Awesome 5 Free";font-weight:400}@font-face{font-family:"Font Awesome 5 Free";font-style:normal;font-weight:900;font-display:block;src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-solid-900.eot);src:url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-solid-900.eot?#iefix) format("embedded-opentype"),url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-solid-900.woff2) format("woff2"),url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-solid-900.woff) format("woff"),url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-solid-900.ttf) format("truetype"),url(https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/webfonts/fa-solid-900.svg#fontawesome) format("svg")}.fa,.fas{font-family:"Font Awesome 5 Free";font-weight:900}
+
+        /* --- Custom Styles --- */
+        :root {
+            --bg-color: #f7fafc;
+            --text-color: #2d3748;
+            --panel-bg: #ffffff;
+            --dark-panel-bg: #1a202c;
+            --dark-panel-text: #edf2f7;
+            --border-color: #e2e8f0;
+            --dark-border-color: #4a5568;
+            --primary-color: #667eea;
+            --primary-hover: #5a67d8;
+            --green-color: #48bb78;
+            --red-color: #f56565;
+            --dark-red-hover: #c53030;
+            --blue-color: #4299e1;
+            --gray-color: #4a5568;
+        }
+
+        *, ::before, ::after { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            line-height: 1.5;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .app-nav {
+            background-color: var(--panel-bg);
+            padding: 0 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .nav-brand {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .nav-links {
+            display: flex;
+        }
+
+        .nav-link {
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .nav-link:hover {
+            color: var(--primary-color);
+        }
+        .nav-link.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .container {
+            width: 100%;
+            /* max-width: 1280px;  Removed for full width */
+            margin: 0 auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            min-height: 0;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            flex-shrink: 0;
+        }
+        header h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        header p {
+            margin-top: 0.5rem;
+            color: #718096;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 1.5rem;
+            flex-grow: 1;
+            min-height: 0;
+        }
+
+        .panel {
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .left-panel {
+            width: 33.33%;
+            max-width: 480px; /* Added max-width for better look on large screens */
+            min-width: 320px; /* Added min-width */
+            background-color: var(--panel-bg);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .right-panel {
+            width: 66.67%;
+            flex-grow: 1; /* Allow right panel to take remaining space */
+            background-color: var(--dark-panel-bg);
+            color: var(--dark-panel-text);
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .control-section h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0 0 0.75rem 0;
+            color: #4a5568;
+        }
+
+        .status-box {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background-color: #f9fafb;
+            border-radius: 0.5rem;
+        }
+        #statusIndicator {
+            width: 1rem;
+            height: 1rem;
+            border-radius: 9999px;
+            margin-right: 0.75rem;
+        }
+        #statusIndicator.running { background-color: var(--green-color); }
+        #statusIndicator.stopped { background-color: var(--red-color); }
+        #statusText { font-size: 1.125rem; font-weight: 500; color: #718096; }
+
+        .port-display {
+            margin-left: auto;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            background-color: #e3e8ff;
+            padding: 0.25rem 0.6rem;
+            border-radius: 0.25rem;
+        }
+
+        .button-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            color: white;
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn:enabled:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .btn:disabled { background-color: #cbd5e0; cursor: not-allowed; }
+        .btn i { margin-right: 0.5rem; }
+
+        .btn-start { background-color: var(--green-color); }
+        .btn-stop { background-color: var(--red-color); }
+        .btn-restart { background-color: var(--blue-color); }
+        .btn-kill { background-color: var(--gray-color); }
+        .btn-save { background-color: var(--primary-color); }
+        .btn-save:hover { background-color: var(--primary-hover); }
+
+        label { display: block; font-size: 0.875rem; font-weight: 500; color: #718096; margin-bottom: 0.25rem; }
+        .input-group { display: flex; align-items: center; gap: 0.5rem; }
+        .input-field {
+            margin-top: 0.25rem;
+            display: block;
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+        .input-field:focus { outline: none; border-color: var(--primary-color); }
+        .health-check-box, .upload-box { background-color: #f9fafb; border-radius: 0.5rem; padding: 1rem; }
+
+        /* Tabs */
+        .tabs-header { display: flex; border-bottom: 1px solid var(--dark-border-color); margin-bottom: 0.5rem; flex-shrink: 0; }
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            border: none;
+            background: none;
+            color: #a0aec0;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease-in-out;
+        }
+        .tab-btn:hover { color: white; }
+        .tab-btn.active { color: white; border-bottom-color: var(--primary-color); }
+        .tab-content { display: none; flex-grow: 1; min-height: 0; }
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            min-height: 0;
+        }
+        /* Console */
+        .console-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid var(--dark-border-color); padding-bottom: 0.5rem; gap: 1rem; flex-shrink: 0; }
+        #logSearch { background-color: #4a5568; color: white; border-radius: 0.375rem; padding: 0.25rem 0.75rem; border: 1px solid #718096; width: 100%; }
+        .console-options { display: flex; align-items: center; gap: 1rem; }
+        .auto-scroll-label { display: flex; align-items: center; white-space: nowrap; cursor: pointer; font-size: 0.875rem; color: #a0aec0; }
+        .auto-scroll-label input { margin-right: 0.4rem; }
+        #clearLogButton { font-size: 0.875rem; background-color: #4a5568; color: white; padding: 0.25rem 0.75rem; border-radius: 0.375rem; white-space: nowrap; border: none; cursor: pointer; }
+        #log-output { overflow-y: auto; flex-grow: 1; font-size: 0.875rem; padding-right: 0.5rem; }
+        .log-line { margin: 0; line-height: 1.5; }
+        .log-line span:first-child { color: #a0aec0; padding-right: 0.5rem; }
+        .log-error { color: #f56565; }
+        .log-system { color: #4299e1; }
+
+        /* App Cards & Upload */
+        .upload-box-dark { border: 2px dashed var(--dark-border-color); border-radius: 0.5rem; padding: 1.5rem; text-align: center; margin-bottom: 1.5rem; flex-shrink: 0; }
+        .upload-box-dark label { color: #a0aec0; font-weight: 600; }
+        .upload-box-dark .input-field { background-color: var(--dark-border-color); border-color: #718096; color: white; }
+        .upload-box-dark .btn-save { width: auto; margin-left: 1rem; }
+        #appsContentInner { overflow-y: auto; flex-grow: 1; }
+        #webappsList { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; padding: 0.5rem; }
+        .app-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-color: #2d3748;
+            color: #edf2f7;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
+        }
+        .app-card-link { text-decoration: none; color: inherit; }
+        .app-card-link:hover { color: var(--primary-color); }
+        .app-card-link i { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; color: var(--primary-color); }
+        .app-card-link h3 { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; color: white; }
+
+        .btn-uninstall {
+            background-color: var(--red-color);
+            color: white;
+            border: none;
+            padding: 0.3rem 0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            margin-top: 0.75rem;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-uninstall:hover { background-color: var(--dark-red-hover); }
+        .btn-uninstall i { margin-right: 0.4rem; }
+
+        /* Custom Scrollbars */
+        .left-panel::-webkit-scrollbar { width: 8px; }
+        .left-panel::-webkit-scrollbar-track { background: #e2e8f0; }
+        .left-panel::-webkit-scrollbar-thumb { background-color: #a0aec0; border-radius: 4px; }
+        .left-panel::-webkit-scrollbar-thumb:hover { background-color: #718096; }
+
+        #log-output::-webkit-scrollbar, #appsContentInner::-webkit-scrollbar { width: 8px; }
+        #log-output::-webkit-scrollbar-track, #appsContentInner::-webkit-scrollbar-track { background: var(--dark-panel-bg); }
+        #log-output::-webkit-scrollbar-thumb, #appsContentInner::-webkit-scrollbar-thumb { background-color: var(--dark-border-color); border-radius: 4px; }
+        #log-output::-webkit-scrollbar-thumb:hover, #appsContentInner::-webkit-scrollbar-thumb:hover { background-color: #718096; }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-content { flex-direction: column; }
+            .left-panel, .right-panel { width: 100%; max-width: none; }
+        }
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .app-nav { flex-direction: column; padding: 0.5rem 1rem; }
+            .nav-links { margin-top: 0.5rem; }
+        }
+
+    </style>
+</head>
+<body>
+<nav class="app-nav">
+    <div class="nav-brand">Dorado5项目部署和智能问数 0.01 版本</div>
+    <div class="nav-links">
+        <a href="/index.html" class="nav-link active">Tomcat 管理器</a>
+        <a href="/database.html" class="nav-link">数据库工具</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="main-content">
+        <!-- Left Panel -->
+        <div class="panel left-panel">
+            <div class="control-section">
+                <h2>状态监控</h2>
+                <div class="status-box">
+                    <div id="statusIndicator"></div>
+                    <span id="statusText">已停止</span>
+                    <span id="tomcatPortDisplay" class="port-display">端口: -</span>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h2>操作控制</h2>
+                <div class="button-grid">
+                    <button id="startButton" class="btn btn-start"><i class="fas fa-play"></i>启动</button>
+                    <button id="stopButton" class="btn btn-stop"><i class="fas fa-stop"></i>停止</button>
+                    <button id="restartButton" class="btn btn-restart"><i class="fas fa-sync-alt"></i>重启</button>
+                    <button id="killButton" class="btn btn-kill"><i class="fas fa-skull-crossbones"></i>Kill 进程</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h2>定时任务</h2>
+                <label for="restartTime">每日重启时间:</label>
+                <div class="input-group">
+                    <input type="time" id="restartTime" class="input-field">
+                    <button id="saveSchedule" class="btn btn-save"><i class="fas fa-save"></i>保存</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h2>自动健康监控</h2>
+                <div class="health-check-box">
+                    <div>
+                        <label for="healthCheckUrl">健康检查 URL:</label>
+                        <input type="text" id="healthCheckUrl" placeholder="http://localhost:8080/app/" class="input-field">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.75rem;">
+                        <div>
+                            <label for="healthCheckInterval">检查间隔(秒)</label>
+                            <input type="number" id="healthCheckInterval" value="30" min="5" class="input-field">
+                        </div>
+                        <div>
+                            <label for="healthCheckThreshold">失败阈值(次)</label>
+                            <input type="number" id="healthCheckThreshold" value="3" min="1" class="input-field">
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 0.5rem; margin-top: 0.75rem;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="healthCheckEnabled" style="height: 1.25rem; width: 1.25rem;">
+                            <span style="margin-left: 0.5rem;">启用监控</span>
+                        </label>
+                        <button id="saveHealthCheck" class="btn btn-save"><i class="fas fa-save"></i>保存设置</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Panel -->
+        <div class="panel right-panel">
+            <div class="tabs-header">
+                <button id="consoleTab" class="tab-btn active">控制台</button>
+                <button id="appsTab" class="tab-btn">已部署应用</button>
+            </div>
+
+            <div id="consoleContent" class="tab-content active">
+                <div class="console-header">
+                    <input type="text" id="logSearch" placeholder="搜索日志..." class="input-field">
+                    <div class="console-options">
+                        <label class="auto-scroll-label">
+                            <input type="checkbox" id="autoScrollCheckbox" checked>
+                            自动滚动
+                        </label>
+                        <button id="clearLogButton">清空日志</button>
+                    </div>
+                </div>
+                <div id="log-output">
+                    <p class="log-line"><span>[System]</span> <span>等待连接服务器...</span></p>
+                </div>
+            </div>
+
+            <div id="appsContent" class="tab-content">
+                <div class="upload-box-dark">
+                    <div style="display: flex; align-items: center; justify-content: center;">
+                        <label for="webappFile">选择 .war 文件:</label>
+                        <input type="file" id="webappFile" class="input-field" accept=".war" style="margin-left: 1rem; flex-grow: 1;">
+                        <button id="uploadButton" class="btn btn-save"><i class="fas fa-upload"></i> 部署</button>
+                    </div>
+                </div>
+                <div id="appsContentInner">
+                    <div id="webappsList">
+                        <!-- App cards will be injected here by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const D = id => document.getElementById(id);
+        const Q = s => document.querySelector(s);
+        // Controls
+        const startButton = D('startButton'), stopButton = D('stopButton'), restartButton = D('restartButton'), killButton = D('killButton');
+        // Schedule
+        const saveScheduleButton = D('saveSchedule'), restartTimeInput = D('restartTime');
+        // Status
+        const statusIndicator = D('statusIndicator'), statusText = D('statusText'), tomcatPortDisplay = D('tomcatPortDisplay');
+        // Console
+        const logOutput = D('log-output'), logSearchInput = D('logSearch'), clearLogButton = D('clearLogButton'), autoScrollCheckbox = D('autoScrollCheckbox');
+        // Health Check
+        const healthCheckUrlInput = D('healthCheckUrl'), healthCheckIntervalInput = D('healthCheckInterval'), healthCheckThresholdInput = D('healthCheckThreshold'), healthCheckEnabledInput = D('healthCheckEnabled'), saveHealthCheckButton = D('saveHealthCheck');
+        // Tabs
+        const consoleTab = D('consoleTab'), appsTab = D('appsTab'), consoleContent = D('consoleContent'), appsContent = D('appsContent'), webappsList = D('webappsList');
+        // Upload
+        const webappFileInput = appsContent.querySelector('#webappFile'), uploadButton = appsContent.querySelector('#uploadButton');
+
+        let tomcatPort = 8080;
+
+        // --- Tab Logic ---
+        function switchTab(showConsole) {
+            consoleContent.classList.toggle('active', showConsole);
+            appsContent.classList.toggle('active', !showConsole);
+            consoleTab.classList.toggle('active', showConsole);
+            appsTab.classList.toggle('active', !showConsole);
+        }
+        consoleTab.addEventListener('click', () => switchTab(true));
+        appsTab.addEventListener('click', () => switchTab(false));
+
+        // --- Core Functions ---
+        function updateStatus(running) {
+            const isRunning = !!running;
+            statusIndicator.classList.toggle('running', isRunning);
+            statusIndicator.classList.toggle('stopped', !isRunning);
+            statusText.textContent = isRunning ? '运行中' : '已停止';
+            [startButton.disabled, stopButton.disabled, restartButton.disabled, killButton.disabled] =
+                [isRunning, !isRunning, !isRunning, !isRunning];
+        }
+
+        function getCurrentTimestamp() {
+            return new Date().toLocaleTimeString('zh-CN', { hour12: false });
+        }
+
+        function addLog(message, type = 'log') {
+            const p = document.createElement('p');
+            p.className = 'log-line';
+            const timestampSpan = document.createElement('span');
+            timestampSpan.textContent = getCurrentTimestamp();
+            const contentSpan = document.createElement('span');
+            contentSpan.textContent = message;
+
+            if (type === 'error') contentSpan.classList.add('log-error');
+            else if (message.startsWith('[System]')) contentSpan.classList.add('log-system');
+
+            p.appendChild(timestampSpan);
+            p.appendChild(contentSpan);
+            logOutput.appendChild(p);
+            filterLogs();
+
+            if (autoScrollCheckbox.checked) {
+                logOutput.scrollTop = logOutput.scrollHeight;
+            }
+        }
+
+        function filterLogs() {
+            const searchTerm = logSearchInput.value.toLowerCase();
+            const logLines = logOutput.getElementsByClassName('log-line');
+            for(let line of logLines) {
+                const text = line.textContent.toLowerCase();
+                line.style.display = text.includes(searchTerm) ? '' : 'none';
+            }
+        }
+
+        async function apiCall(endpoint, options = { method: 'POST' }) {
+            try {
+                const response = await fetch(`/api/${endpoint}`, options);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                if (data.message) addLog(`[System] ${data.message}`);
+                return data;
+            } catch (err) {
+                addLog(`[System] API call to ${endpoint} failed: ${err}`, 'error');
+            }
+        }
+
+        async function fetchWebApps() {
+            const data = await apiCall('webapps', { method: 'GET' });
+            webappsList.innerHTML = '';
+            if (data && data.length > 0) {
+                data.forEach(app => {
+                    const card = document.createElement('div');
+                    card.className = "app-card";
+
+                    const link = document.createElement('a');
+                    link.href = `http://${window.location.hostname}:${tomcatPort}/${app}`;
+                    link.target = '_blank';
+                    link.className = "app-card-link";
+
+                    const icon = document.createElement('i');
+                    icon.className = "fas fa-box-open";
+
+                    const appName = document.createElement('h3');
+                    appName.textContent = `/${app}`;
+
+                    link.appendChild(icon);
+                    link.appendChild(appName);
+
+                    const uninstallButton = document.createElement('button');
+                    uninstallButton.className = 'btn-uninstall';
+                    uninstallButton.innerHTML = '<i class="fas fa-trash"></i> 卸载';
+                    uninstallButton.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const password = prompt(`确定要卸载应用 "${app}" 吗？\n请输入卸载密码：`);
+                        if (password !== null) {
+                            apiCall('uninstall-webapp', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ appName: app, password: password })
+                            });
+                        }
+                    });
+
+                    card.appendChild(link);
+                    card.appendChild(uninstallButton);
+                    webappsList.appendChild(card);
+                });
+            } else {
+                webappsList.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; margin-top: 2rem; color: #a0aec0;">未找到已部署的应用。</p>';
+            }
+        }
+
+        // --- Event Listeners ---
+        logSearchInput.addEventListener('input', filterLogs);
+        clearLogButton.addEventListener('click', () => {
+            logOutput.innerHTML = '';
+            addLog('[System] 日志已清空。');
+        });
+
+        startButton.addEventListener('click', () => apiCall('start'));
+        stopButton.addEventListener('click', () => apiCall('stop'));
+        restartButton.addEventListener('click', () => apiCall('restart'));
+        killButton.addEventListener('click', () => apiCall('kill'));
+
+        saveScheduleButton.addEventListener('click', () => {
+            if (!restartTimeInput.value) return alert('请选择一个时间');
+            apiCall('schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ restartTime: restartTimeInput.value })
+            });
+        });
+
+        saveHealthCheckButton.addEventListener('click', () => {
+            const config = {
+                enabled: healthCheckEnabledInput.checked,
+                url: healthCheckUrlInput.value,
+                intervalSeconds: parseInt(healthCheckIntervalInput.value, 10),
+                failureThreshold: parseInt(healthCheckThresholdInput.value, 10)
+            };
+            if(config.enabled && !config.url) return alert('启用健康检查时必须提供URL。');
+            apiCall('health-check/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+        });
+
+        uploadButton.addEventListener('click', async () => {
+            const file = webappFileInput.files[0];
+            if (!file) {
+                alert('请先选择一个文件。');
+                return;
+            }
+            if (!file.name.toLowerCase().endsWith('.war')) {
+                alert('请上传一个 .war 文件。');
+                return;
+            }
+
+            uploadButton.disabled = true;
+            uploadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在上传...';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/upload-webapp', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                if (data.message) addLog(`[System] ${data.message}`);
+            } catch (err) {
+                addLog(`[System] 文件上传失败: ${err}`, 'error');
+            } finally {
+                webappFileInput.value = '';
+                uploadButton.disabled = false;
+                uploadButton.innerHTML = '<i class="fas fa-upload"></i> 部署';
+            }
+        });
+
+        // --- Initialization ---
+        async function initialize() {
+            const status = await apiCall('status', { method: 'GET' });
+            updateStatus(status.running);
+
+            const config = await apiCall('config', { method: 'GET' });
+            if (config && config.port) {
+                tomcatPort = config.port;
+                tomcatPortDisplay.textContent = `端口: ${tomcatPort}`;
+            }
+
+            const schedule = await apiCall('schedule', { method: 'GET' });
+            if (schedule.restartTime) restartTimeInput.value = schedule.restartTime;
+
+            const healthConfig = await apiCall('health-check/config', { method: 'GET' });
+            if(healthConfig) {
+                healthCheckEnabledInput.checked = healthConfig.enabled;
+                healthCheckUrlInput.value = healthConfig.url || '';
+                healthCheckIntervalInput.value = healthConfig.intervalSeconds || 30;
+                healthCheckThresholdInput.value = healthConfig.failureThreshold || 3;
+            }
+
+            fetchWebApps();
+        }
+
+        const eventSource = new EventSource('/api/subscribe');
+        eventSource.addEventListener('log', e => addLog(e.data));
+        eventSource.addEventListener('error', e => addLog(e.data, 'error'));
+        eventSource.addEventListener('status', e => {
+            const data = JSON.parse(e.data);
+            updateStatus(data.running);
+            setTimeout(fetchWebApps, 500);
+        });
+        eventSource.onopen = () => { logOutput.innerHTML = ''; addLog('[System] SSE 连接已建立，等待日志...'); };
+        eventSource.onerror = () => addLog('[System] 与服务器的连接丢失，正在尝试重连...', 'error');
+
+        initialize();
+    });
+</script>
+</body>
+</html>
+

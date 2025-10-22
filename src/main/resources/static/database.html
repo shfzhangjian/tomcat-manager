@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dorado5项目部署和智能问数</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/tabulator-tables@5.5.2/dist/css/tabulator_bootstrap5.min.css" rel="stylesheet">
+    <link href="/css/database.css" rel="stylesheet">
+</head>
+<body>
+<nav class="app-nav">
+    <div class="nav-brand">Dorado5项目部署和智能问数 0.01 版本</div>
+    <div class="nav-links">
+        <a href="/index.html" class="nav-link">Tomcat 管理器</a>
+        <a href="/database.html" class="nav-link active">数据库工具</a>
+    </div>
+</nav>
+<div class="container">
+    <div class="main-content" id="mainContent">
+        <button id="leftPanelExpandBtn" class="panel-toggle-btn left"><i class="fas fa-chevron-right"></i></button>
+        <button id="rightPanelToggleBtn" class="panel-toggle-btn right"><i class="fas fa-chevron-left"></i> 详情</button>
+
+        <div class="panel left-panel" id="leftPanel">
+            <h2>
+                <span>数据库连接</span>
+                <button id="sidebarCollapseBtn" title="收起侧边栏"><i class="fas fa-chevron-left"></i></button>
+            </h2>
+            <ul id="connectionList" class="connection-list">
+            </ul>
+            <button id="addConnectionBtn" class="btn btn-primary"><i class="fas fa-plus"></i> 添加连接</button>
+        </div>
+        <div id="centerPanel" class="panel center-panel">
+            <div id="welcomeMessage">
+                <i class="fas fa-plug" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                <p>请从左侧选择一个连接，或添加一个新连接。</p>
+            </div>
+        </div>
+        <div id="detailsPanel" class="panel details-panel">
+        </div>
+    </div>
+</div>
+
+<div id="connectionModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">添加新连接</h2>
+            <button id="closeModalBtn" title="关闭"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="connectionForm">
+                <input type="hidden" id="connectionId">
+                <div class="form-group full-width">
+                    <label for="connectionName">连接名称</label>
+                    <input type="text" id="connectionName" required>
+                </div>
+                <div class="form-group full-width">
+                    <label for="dbType">数据库类型</label>
+                    <select id="dbType" required>
+                        <option value="mysql">MySQL</option>
+                        <option value="oracle">Oracle</option>
+                    </select>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="dbHost">主机</label>
+                        <input type="text" id="dbHost" required value="localhost">
+                    </div>
+                    <div class="form-group">
+                        <label for="dbPort">端口</label>
+                        <input type="number" id="dbPort" required>
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <label for="dbName">数据库 / SID</label>
+                    <input type="text" id="dbName" required>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="dbUsername">用户名</label>
+                        <input type="text" id="dbUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dbPassword">密码</label>
+                        <input type="password" id="dbPassword" required>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-actions">
+            <div class="btn-group">
+                <button type="button" id="testConnectionBtn" class="btn btn-success" style="margin-top:0;"><i class="fas fa-check-circle"></i> 测试连接</button>
+                <button type="button" id="saveConnectionBtn" class="btn btn-primary" style="margin-top:0;"><i class="fas fa-save"></i> 保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="aiPromptModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>创建AI提示</h2>
+            <div>
+                <button id="maximizeAiModalBtn" title="最大化"><i class="fas fa-expand-arrows-alt"></i></button>
+                <button id="closeAiModalBtn" title="关闭"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="modal-body ai-modal-body">
+            <div class="ai-prompt-section">
+                <div class="form-group full-width">
+                    <label for="aiPromptTopicSelect">选择或创建新主题</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <select id="aiPromptTopicSelect" class="form-group-input" style="width:100%"><option value="">-- 创建新主题 --</option></select>
+                        <input type="text" id="aiPromptTopicInput" placeholder="输入新主题名称..." style="display:none; width:100%;">
+                    </div>
+                </div>
+                <div class="form-group full-width" style="display:flex; flex-direction:column; flex-grow:1; min-height:0;">
+                    <label for="aiPromptContent">提示词上下文 (自动生成, 可编辑)</label>
+                    <textarea id="aiPromptContent" style="font-family: monospace;"></textarea>
+                </div>
+            </div>
+            <div class="ai-related-info-section">
+                <h4>相关信息</h4>
+                <div id="aiRelatedInfoContainer"></div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <div class="btn-group">
+                <button type="button" id="saveAiPromptBtn" class="btn btn-primary" style="margin-top:0;"><i class="fas fa-save"></i> 保存主题</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="alertModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <h3 id="alertTitle" style="margin-top:0;">提示</h3>
+        <p id="alertMessage" style="margin: 1.5rem 0;"></p>
+        <button id="alertOkBtn" class="btn btn-primary" style="margin-top:0; width: auto; padding: 0.5rem 2rem;">确定</button>
+    </div>
+</div>
+
+<div id="confirmModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <h3 id="confirmTitle" style="margin-top:0;">请确认</h3>
+        <p id="confirmMessage" style="margin: 1.5rem 0;"></p>
+        <div class="modal-actions" style="justify-content: center;">
+            <div class="btn-group">
+                <button id="confirmCancelBtn" class="btn btn-secondary" style="margin-top:0;">取消</button>
+                <button id="confirmOkBtn" class="btn btn-danger" style="margin-top:0;">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>正在加载...</span>
+    </div>
+</div>
+<script src="/js/tabulator.min.js"></script>
+<script src="/js/md5.min.js"></script>
+
+<script type="module" src="/js/main.js"></script>
+
+</body>
+</html>
