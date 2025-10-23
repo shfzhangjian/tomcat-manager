@@ -1,14 +1,19 @@
 import { D } from '../utils/helpers.js';
 
+const ui = {
+    showToast: (message, type) => console.log(`Toast (${type}): ${message}`),
+};
+
 const api = {
     /**
      * A generic fetch wrapper for API calls.
      * @param {string} endpoint - The API endpoint to call.
      * @param {Object} options - The options for the fetch call.
      * @param {boolean} [isBlob=false] - Whether to expect a Blob response.
-     * @returns {Promise<any>} The JSON or Blob response.
+     * @param {boolean} [isText=false] - Whether to expect a plain text response.
+     * @returns {Promise<any>} The JSON, Blob, or text response.
      */
-    async apiCall(endpoint, options, isBlob = false) {
+    async apiCall(endpoint, options, isBlob = false, isText = false) {
         try {
             const response = await fetch(`/api/${endpoint}`, options);
             if (!response.ok) {
@@ -16,20 +21,26 @@ const api = {
                     console.log("Layout not found, using defaults.");
                     return null;
                 }
-                const errorData = await response.json();
+                const errorData = await response.json().catch(() => ({ message: `HTTP error! status: ${response.status}` }));
                 throw new Error(errorData.message || '操作失败');
             }
             if (isBlob) return await response.blob();
+
             const text = await response.text();
+
+            // If a plain text response is expected, return it directly
+            if(isText) {
+                return text;
+            }
+
+            // Otherwise, parse as JSON (default behavior)
             return text ? JSON.parse(text) : null;
         } catch (error) {
-            // Avoid showing toast for non-critical errors like layout not found
-            if (!endpoint.includes('/layouts/')) {
-                ui.showToast(error.message, 'error');
-            }
+            // Re-throw the error to be handled by the caller's catch block
             throw error;
         }
     },
+
 
     // --- Connection Management ---
     getConnections: () => api.apiCall('db/connections', { method: 'GET' }),
@@ -43,6 +54,11 @@ const api = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(connData)
+    }),
+    toggleSync: (connId, enabled) => api.apiCall(`sync/toggle/${connId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: enabled })
     }),
 
     // --- Object Browser ---
@@ -66,7 +82,7 @@ const api = {
     }, true),
 
     // --- Layout Management ---
-    getLayoutsForSql: (sqlHash) => api.apiCall(`db/layouts/${sqlHash}`, { method: 'GET' }), // FIX: Changed 'layout' to 'layouts'
+    getLayoutsForSql: (sqlHash) => api.apiCall(`db/layouts/${sqlHash}`, { method: 'GET' }),
     saveLayout: (layoutData) => api.apiCall('db/layout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -85,7 +101,21 @@ const api = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, context })
-    })
+    }),
+
+    // --- Graph Explorer ---
+    searchGraphNodes: (term) => api.apiCall(`graph/search?term=${encodeURIComponent(term)}`, { method: 'GET' }),
+    expandGraphNode: (nodeId) => api.apiCall(`graph/expand?nodeId=${encodeURIComponent(nodeId)}`, { method: 'GET' }),
+
+    // --- Sync ---
+    getMappingConfig: (connId) => api.apiCall(`sync/mapping/${connId}`, { method: 'GET' }, false, true), // Expect a text response
+    saveMappingConfig: (connId, config) => api.apiCall(`sync/mapping/${connId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/yaml' },
+        body: config
+    }),
+    triggerSync: (connId, isDelta = false) => api.apiCall(`sync/trigger/${connId}?delta=${isDelta}`, { method: 'POST' }),
+    getSyncStatus: (connId) => api.apiCall(`sync/status/${connId}`, { method: 'GET' }),
 };
 
 // Make it globally accessible or export it

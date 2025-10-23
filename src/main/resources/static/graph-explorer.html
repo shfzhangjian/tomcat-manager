@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识探索 - Dorado5项目</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="/css/database.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        .graph-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .graph-controls {
+            padding: 1rem;
+            background-color: #f9fafb;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        #graphSearchInput {
+            width: 100%;
+            max-width: 400px;
+        }
+        #graph-network {
+            flex-grow: 1;
+            border: 1px solid var(--border-color);
+            background-color: #ffffff;
+        }
+        .main-content {
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+<nav class="app-nav">
+    <div class="nav-brand">Dorado5项目部署和智能问数 0.01 版本</div>
+    <div class="nav-links">
+        <a href="/index.html" class="nav-link">Tomcat 管理器</a>
+        <a href="/database.html" class="nav-link">数据库工具</a>
+        <a href="/graph-explorer.html" class="nav-link active">知识探索</a>
+    </div>
+</nav>
+
+<div class="main-content" id="mainContent">
+    <div class="graph-container panel">
+        <div class="graph-controls">
+            <label for="graphSearchInput" style="margin: 0;"><strong>搜索实体:</strong></label>
+            <input type="text" id="graphSearchInput" placeholder="输入关键词搜索节点..." class="input-field" style="margin:0;">
+        </div>
+        <div id="graph-network"></div>
+    </div>
+</div>
+
+<script type="module" src="/js/components/graphExplorer.js"></script>
+
+</body>
+</html>

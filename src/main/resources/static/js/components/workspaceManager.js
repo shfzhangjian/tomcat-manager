@@ -1,6 +1,7 @@
 import { sqlEditor } from './sqlEditor.js';
 import { objectBrowser } from './objectBrowser.js';
 import { aiChat } from './aiChat.js';
+import { syncManager } from './syncManager.js';
 import { detailsPanel } from './detailsPanel.js';
 import { ui } from '../utils/ui.js';
 import { api } from '../services/apiService.js';
@@ -19,6 +20,10 @@ const workspaceManager = {
         if (typeof sqlEditor.destroy === 'function') {
             sqlEditor.destroy();
         }
+        if (typeof syncManager.destroy === 'function') {
+            syncManager.destroy();
+        }
+
 
         this.container.innerHTML = this.getHtmlTemplate(connName);
 
@@ -41,10 +46,12 @@ const workspaceManager = {
                     <button class="workspace-tab active" data-tab="objects">对象浏览器</button>
                     <button class="workspace-tab" data-tab="editor">SQL 编辑器</button>
                     <button class="workspace-tab" data-tab="ai">智能问数 (AI)</button>
+                    <button class="workspace-tab" data-tab="sync">数据同步</button>
                 </div>
                 <div class="workspace-content active" id="objectsContent"></div>
                 <div class="workspace-content" id="editorContent"></div>
                 <div class="workspace-content" id="aiContent"></div>
+                <div class="workspace-content" id="syncContent"></div>
             </div>
         `;
     },
@@ -74,6 +81,8 @@ const workspaceManager = {
             sqlEditor.init(container, connId);
         } else if (contentId === 'aiContent') {
             aiChat.init(container, connId);
+        } else if (contentId === 'syncContent') {
+            syncManager.init(container, connId);
         }
     },
 

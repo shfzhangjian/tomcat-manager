@@ -15,6 +15,43 @@ function render(connections) {
         li.className = 'connection-item';
         li.dataset.id = conn.id;
 
+        // --- 新增: 同步开关 ---
+        const syncToggleLabel = document.createElement('label');
+        syncToggleLabel.className = 'sync-toggle-switch';
+        syncToggleLabel.title = conn.syncEnabled !== false ? '定时同步已开启' : '定时同步已关闭';
+
+        const syncToggleInput = document.createElement('input');
+        syncToggleInput.type = 'checkbox';
+        // 默认值为true，如果后台返回的syncEnabled是undefined，也应视为开启
+        syncToggleInput.checked = conn.syncEnabled !== false;
+
+        syncToggleInput.addEventListener('click', (e) => e.stopPropagation()); // 防止点击开关时触发整行选中
+
+        syncToggleInput.addEventListener('change', async (e) => {
+            e.stopPropagation();
+            const enabled = e.target.checked;
+            try {
+                ui.showLoading();
+                await api.toggleSync(conn.id, enabled);
+                ui.showToast(`连接 "${conn.name}" 的定时同步已${enabled ? '开启' : '关闭'}.`);
+                // 更新缓存以立即反映变化
+                const cachedConn = connectionsCache.find(c => c.id === conn.id);
+                if (cachedConn) cachedConn.syncEnabled = enabled;
+                syncToggleLabel.title = enabled ? '定时同步已开启' : '定时同步已关闭';
+            } catch (error) {
+                ui.showToast(`更新同步状态失败: ${error.message}`, 'error');
+                e.target.checked = !enabled; // 失败时恢复开关状态
+            } finally {
+                ui.hideLoading();
+            }
+        });
+
+        const syncToggleSlider = document.createElement('span');
+        syncToggleSlider.className = 'slider round';
+        syncToggleLabel.appendChild(syncToggleInput);
+        syncToggleLabel.appendChild(syncToggleSlider);
+        // --- 开关结束 ---
+
         const infoDiv = document.createElement('div');
         infoDiv.className = 'connection-info';
         infoDiv.innerHTML = `<i class="fas fa-database"></i><span title="${conn.name}">${conn.name}</span>`;
@@ -47,6 +84,8 @@ function render(connections) {
 
         actionsDiv.appendChild(editBtn);
         actionsDiv.appendChild(deleteBtn);
+
+        li.appendChild(syncToggleLabel); // 添加开关到列表项
         li.appendChild(infoDiv);
         li.appendChild(actionsDiv);
         listEl.appendChild(li);
@@ -54,6 +93,8 @@ function render(connections) {
 }
 
 async function handleSave() {
+    // ... (handleSave logic remains the same)
+// ... existing code ...
     const form = D('connectionForm');
     if (!form.checkValidity()) {
         ui.showAlert("请填写所有必填字段。");
@@ -67,7 +108,8 @@ async function handleSave() {
         port: D('dbPort').value,
         databaseName: D('dbName').value,
         username: D('dbUsername').value,
-        password: D('dbPassword').value
+        password: D('dbPassword').value,
+        syncEnabled: true // 新建连接默认开启同步
     };
     try {
         await api.saveConnection(connection);

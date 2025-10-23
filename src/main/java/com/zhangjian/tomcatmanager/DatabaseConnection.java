@@ -9,6 +9,7 @@ public class DatabaseConnection {
     private String databaseName; // DB name for MySQL, SID for Oracle
     private String username;
     private String password;
+    private boolean syncEnabled = true; // 新增字段，默认为true
 
     // Getters and Setters
     public String getId() { return id; }
@@ -27,4 +28,6 @@ public class DatabaseConnection {
     public void setUsername(String username) { this.username = username; }
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+    public boolean isSyncEnabled() { return syncEnabled; }
+    public void setSyncEnabled(boolean syncEnabled) { this.syncEnabled = syncEnabled; }
 }

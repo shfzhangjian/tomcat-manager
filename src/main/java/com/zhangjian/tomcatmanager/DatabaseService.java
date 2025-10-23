@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zhangjian.tomcatmanager.dto.*;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -63,7 +62,18 @@ public class DatabaseService {
         persistConnections();
     }
 
-    private Connection getConnection(String connectionId) throws SQLException {
+    // 新增方法: 更新同步开关状态
+    public void updateSyncEnabled(String connectionId, boolean enabled) throws IOException {
+        DatabaseConnection connection = connections.get(connectionId);
+        if (connection == null) {
+            throw new IllegalArgumentException("Connection not found with id: " + connectionId);
+        }
+        connection.setSyncEnabled(enabled);
+        persistConnections();
+    }
+
+
+    public Connection getConnection(String connectionId) throws SQLException {
         DatabaseConnection dbConn = connections.get(connectionId);
         if (dbConn == null) {
             throw new SQLException("未找到ID为 " + connectionId + " 的连接配置。");

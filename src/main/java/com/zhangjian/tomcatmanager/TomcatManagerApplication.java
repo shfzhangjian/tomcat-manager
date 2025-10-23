@@ -1,11 +1,14 @@
 package com.zhangjian.tomcatmanager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -34,6 +37,7 @@ import java.util.stream.Collectors;
 
 @SpringBootApplication
 @EnableScheduling
+@EnableAsync
 public class TomcatManagerApplication {
 
     public static void main(String[] args) {
@@ -42,7 +46,12 @@ public class TomcatManagerApplication {
 
     @Bean
     public ObjectMapper objectMapper() {
-        return new ObjectMapper();
+        ObjectMapper objectMapper = new ObjectMapper();
+        // FIX: Register the JavaTimeModule to handle Java 8 Date/Time types
+        objectMapper.registerModule(new JavaTimeModule());
+        // FIX: Configure to write dates as ISO-8601 strings (e.g., "2025-10-23T00:08:00")
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return objectMapper;
     }
 }
 
@@ -68,7 +77,7 @@ class HealthCheckConfig {
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
     public String getUrl() { return url; }
-    public void setUrl(String url) { this.url = url; }
+    public void setUrl(String url) { this.setUrl(url); }
     public int getIntervalSeconds() { return intervalSeconds; }
     public void setIntervalSeconds(int intervalSeconds) { this.intervalSeconds = intervalSeconds; }
     public int getFailureThreshold() { return failureThreshold; }
@@ -751,4 +760,3 @@ class TomcatService {
         }).start();
     }
 }
-
