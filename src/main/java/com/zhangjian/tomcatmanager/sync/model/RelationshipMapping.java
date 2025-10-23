@@ -1,12 +1,44 @@
 package com.zhangjian.tomcatmanager.sync.model;
 
+/**
+ * Represents the configuration for mapping a relationship between two types of nodes.
+ */
 public class RelationshipMapping {
-    private String type;
-    private String fromNode;
-    private String toNode;
-    private String joinOn; // e.g., "from_column=to_column"
 
-    // Getters and Setters
+    /**
+     * The type (name) of the relationship in Neo4j (e.g., "包含", "下级").
+     */
+    private String type;
+
+    /**
+     * The key (defined in the 'nodes' section of YAML) of the starting node mapping.
+     */
+    private String fromNode;
+
+    /**
+     * The key (defined in the 'nodes' section of YAML) of the ending node mapping.
+     */
+    private String toNode;
+
+    /**
+     * Standard join condition based on column equality between the two source tables.
+     * Format: "fromTableColumn=toTableColumn".
+     * Can also be a special value like "HIERARCHY:columnName".
+     */
+    private String joinOn;
+
+    /**
+     * NEW: Lookup-based join condition.
+     * Connects nodes based on a property value from the 'fromNode' matching
+     * the primary key property value of the 'toNode'.
+     * Format: "fromNodeLookupPropertyName=toNodePrimaryKeyPropertyName".
+     * Example: "_temp_maker_loc=位置编号"
+     */
+    private String joinOnLookup;
+
+
+    // --- Getters and Setters ---
+
     public String getType() {
         return type;
     }
@@ -38,4 +70,19 @@ public class RelationshipMapping {
     public void setJoinOn(String joinOn) {
         this.joinOn = joinOn;
     }
+
+    public String getJoinOnLookup() {
+        return joinOnLookup;
+    }
+
+    public void setJoinOnLookup(String joinOnLookup) {
+        this.joinOnLookup = joinOnLookup;
+    }
+
+
+    // Helper method in RelationshipMapping or directly used:
+    public String getFromNodeLabelOrDefault() { return "设备"; } // Based on your hierarchyRel config
+    public String getToNodeLabelOrDefault() { return "设备"; }   // Based on your hierarchyRel config
+
 }
+

@@ -106,7 +106,7 @@ const api = {
     // --- Graph Explorer ---
     searchGraphNodes: (term) => api.apiCall(`graph/search?term=${encodeURIComponent(term)}`, { method: 'GET' }),
     expandGraphNode: (nodeId) => api.apiCall(`graph/expand?nodeId=${encodeURIComponent(nodeId)}`, { method: 'GET' }),
-
+    getGraphSchema: () => api.apiCall('graph/schema', { method: 'GET' }),
     // --- Sync ---
     getMappingConfig: (connId) => api.apiCall(`sync/mapping/${connId}`, { method: 'GET' }, false, true), // Expect a text response
     saveMappingConfig: (connId, config) => api.apiCall(`sync/mapping/${connId}`, {

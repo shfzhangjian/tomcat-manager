@@ -4,36 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>知识探索 - Dorado5项目</title>
+    <!-- [v2.4] 引入 Font Awesome (vis-network 导航按钮需要) -->
     <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/vis-network/styles/vis-network.min.css" rel="stylesheet" type="text/css" />
     <link href="/css/database.css" rel="stylesheet">
-    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <style>
-        .graph-container {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        .graph-controls {
-            padding: 1rem;
-            background-color: #f9fafb;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-        #graphSearchInput {
-            width: 100%;
-            max-width: 400px;
-        }
-        #graph-network {
-            flex-grow: 1;
-            border: 1px solid var(--border-color);
-            background-color: #ffffff;
-        }
-        .main-content {
-            padding: 0;
-        }
-    </style>
 </head>
 <body>
 <nav class="app-nav">
@@ -45,17 +19,66 @@
     </div>
 </nav>
 
-<div class="main-content" id="mainContent">
-    <div class="graph-container panel">
-        <div class="graph-controls">
-            <label for="graphSearchInput" style="margin: 0;"><strong>搜索实体:</strong></label>
-            <input type="text" id="graphSearchInput" placeholder="输入关键词搜索节点..." class="input-field" style="margin:0;">
-        </div>
-        <div id="graph-network"></div>
+<!-- [v2.4 修正] 容器使用 .container 和 .graph-explorer-container -->
+<div class="container">
+    <div class="graph-explorer-container" id="graph-explorer-container"> <!-- [v2.5] 增加 ID -->
+        <!-- 1. 左侧 Schema 侧边栏 -->
+        <aside id="schema-sidebar">
+            <div class="schema-section">
+                <h3>节点标签</h3>
+                <div id="schema-node-labels" class="schema-tags-container">
+                    <p class="schema-none">加载中...</p>
+                </div>
+            </div>
+            <div class="schema-section">
+                <h3>关系类型</h3>
+                <div id="schema-rel-types" class="schema-tags-container">
+                    <p class="schema-none">加载中...</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 2. 中间主图谱区域 -->
+        <!-- [v2.4 修正] #graph-main 包含搜索和画布 -->
+        <main id="graph-main">
+            <!-- [v2.4 修正] 为这个 div 添加 ID "graph-controls" -->
+            <div class="graph-controls" id="graph-controls">
+                <i class="fas fa-search"></i>
+                <input type="text" id="graph-search" placeholder="搜索节点名称、ID 或位置编码...">
+                <!-- [v2.4 修正] 确保搜索结果容器 ID 正确 -->
+                <div id="search-results-container" class="search-results-list">
+                    <!-- 搜索结果将动态注入这里 -->
+                </div>
+            </div>
+            <div id="graph-container">
+                <!-- Vis-network 画布将在这里 -->
+            </div>
+        </main>
+
+        <!-- 3. [v2.5 修正] 右侧详情面板 -->
+        <aside id="graph-details-panel">
+            <!-- [v2.5] 添加展开/收起按钮 -->
+            <div class="details-panel-toggle" id="toggle-details-btn" title="收起/展开详情">
+                <i class="fas fa-chevron-right"></i>
+            </div>
+            <h3 id="details-title">节点详情</h3>
+            <div id="details-content" class="details-content-body">
+                <p>点击一个节点查看其详情。</p>
+            </div>
+        </aside>
+
+        <!-- [v2.5 修正] 鸟瞰图 (Minimap) 容器已移除 -->
+
     </div>
 </div>
 
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script type="module" src="/js/utils/helpers.js"></script>
+<script type="module" src="/js/services/apiService.js"></script>
+<script type="module" src="/js/utils/ui.js"></script>
+<!-- [v2.5 修正] 确保 graphExplorer.js 是模块类型 -->
 <script type="module" src="/js/components/graphExplorer.js"></script>
 
 </body>
 </html>
+

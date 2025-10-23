@@ -2,14 +2,15 @@
     --bg-color: #f7fafc;
     --text-color: #2d3748;
     --panel-bg: #ffffff;
-    --dark-panel-bg: #1a202c;
-    --dark-panel-text: #edf2f7;
+    --dark-panel-bg: #1a202c; /* Used for schema sidebar */
+    --dark-panel-text: #edf2f7; /* Used for schema sidebar */
     --border-color: #e2e8f0;
-    --dark-border-color: #4a5568;
+    --dark-border-color: #4a5568; /* Used for schema sidebar */
     --primary-color: #667eea;
     --primary-hover: #5a67d8;
     --green-color: #48bb78;
     --red-color: #f56565;
+    --dark-red-hover: #c53030;
     --blue-color: #4299e1;
     --gray-color: #4a5568;
 }
@@ -25,7 +26,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    overflow: hidden;
+    overflow: hidden; /* Prevent body scroll */
 }
 
 .app-nav {
@@ -37,6 +38,7 @@ body {
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
+    height: 57px; /* Fixed height for nav */
 }
 
 .nav-brand {
@@ -56,6 +58,8 @@ body {
     font-weight: 600;
     border-bottom: 3px solid transparent;
     transition: all 0.2s;
+    display: flex; /* Align text vertically */
+    align-items: center;
 }
 .nav-link:hover {
     color: var(--primary-color);
@@ -68,13 +72,259 @@ body {
 .container {
     width: 100%;
     margin: 0 auto;
-    padding: 2rem;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
     min-height: 0;
     position: relative;
+    /* Reset padding for children */
+    padding: 0;
 }
+/* Re-add padding specifically for database.html's main content */
+.container > .main-content {
+    padding: 2rem;
+    /* Ensure it still fills height */
+    height: calc(100vh - 57px);
+    overflow-y: auto; /* Allow scroll if needed */
+}
+/* --- [v2.4 新增] 知识探索页面 专属布局 --- */
+.graph-explorer-container {
+    padding: 0;
+    display: flex;
+    height: calc(100vh - 57px); /* Full height minus nav */
+    width: 100%;
+    overflow: hidden;
+    /* [v2.5] 为面板折叠添加过渡 */
+    transition: margin-right 0.3s ease-in-out;
+}
+
+#schema-sidebar {
+    width: 280px;
+    min-width: 240px;
+    background-color: var(--dark-panel-bg);
+    color: var(--dark-panel-text);
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+.schema-section {
+    margin-bottom: 1.5rem;
+}
+.schema-section h3 {
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--dark-border-color);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+.schema-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.schema-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: #4a5568;
+    padding: 0.25rem 0.75rem;
+    border-radius: 99px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.schema-tag:hover {
+    background-color: var(--primary-color);
+}
+.schema-tag .schema-count {
+    margin-left: 0.5rem;
+    background-color: #718096;
+    padding: 0 0.4rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+}
+.schema-none, .schema-error {
+    font-size: 0.9rem;
+    color: #a0aec0;
+}
+
+/* 中间主区域 */
+#graph-main {
+    position: relative; /* 确保 vis-network 的 UI 元素（如按钮）可以正确定位 */
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background-color: var(--panel-bg); /* 背景色 */
+}
+
+.graph-controls {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    position: relative; /* 用于搜索结果定位 */
+}
+.graph-controls i {
+    color: var(--gray-color);
+}
+#graph-search {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    padding: 0.25rem;
+}
+.search-results-list {
+    position: absolute;
+    top: 100%;
+    left: 1.5rem;
+    right: 1.5rem;
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 200;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none; /* 默认隐藏 */
+}
+.search-result-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+}
+.search-result-item:last-child {
+    border-bottom: none;
+}
+.search-result-item:hover {
+    background-color: #f7fafc;
+}
+.search-result-item.error {
+    color: var(--red-color);
+}
+
+
+#graph-container {
+    flex-grow: 1;
+    position: relative; /* 确保 vis-network 画布本身是相对定位的 */
+    background-color: #fdfdfd; /* 稍微给画布一点背景色 */
+}
+
+/* 详情面板样式 */
+#graph-details-panel {
+    width: 300px;
+    min-width: 300px; /* [v2.5] 固定最小宽度 */
+    background-color: var(--panel-bg);
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+    position: relative; /* [v2.5] 用于定位切换按钮 */
+    transition: width 0.3s ease-in-out, min-width 0.3s ease-in-out; /* [v2.5] 添加过渡 */
+}
+/* [v2.5 新增] 折叠状态 */
+.graph-explorer-container.details-collapsed #graph-details-panel {
+    width: 0;
+    min-width: 0;
+    border-left: none;
+}
+/* [v2.5 新增] 详情面板切换按钮 */
+.details-panel-toggle {
+    position: absolute;
+    top: 50%;
+    left: -1px; /* 贴在左边框上 */
+    transform: translateY(-50%);
+    width: 20px;
+    height: 40px;
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-right: none;
+    border-radius: 6px 0 0 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-color);
+    box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+    z-index: 10;
+}
+.details-panel-toggle:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+/* [v2.5] 折叠时切换按钮图标 */
+.graph-explorer-container.details-collapsed #toggle-details-btn i {
+    transform: rotate(180deg);
+}
+
+
+#details-title {
+    margin: 0;
+    padding: 1rem 1.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+    white-space: nowrap; /* [v2.5] 防止折叠时换行 */
+}
+.details-content-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex-grow: 1;
+    white-space: nowrap; /* [v2.5] 防止折叠时换行 */
+}
+.details-content-body p {
+    margin-top: 0;
+    color: var(--gray-color);
+    font-size: 0.9rem;
+}
+.details-content-body .detail-item {
+    margin-bottom: 1rem;
+}
+.details-content-body .detail-item strong {
+    display: block;
+    color: var(--text-color);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--gray-color);
+}
+.details-content-body .detail-item span {
+    word-wrap: break-word;
+    color: var(--text-color);
+    font-size: 0.95rem;
+}
+.details-content-body .detail-labels .label-tag {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* 鸟瞰图 (Minimap) 容器样式 */
+/* [v2.5 修正] 鸟瞰图已移除 */
+/* #graph-overview { ... } */
+
+/* vis-network 导航按钮 */
+.vis-navigation {
+    position: absolute;
+    bottom: 1rem;
+    right: 1.5rem;
+    z-index: 101 !important; /* 确保在鸟瞰图之上 */
+}
+/* --- 结束 [v2.4] 知识探索样式 --- */
+
 
 .main-content {
     display: flex;
@@ -146,6 +396,11 @@ body {
     align-items: center;
     justify-content: space-between;
 }
+/* Hover effect for the entire item */
+.connection-item:not(.active):hover {
+    background-color: #f0f4f8; /* Light background on hover */
+}
+
 
 .connection-info {
     display: flex;
@@ -163,10 +418,63 @@ body {
     text-overflow: ellipsis;
 }
 
+/* --- Sync Toggle Switch Styles --- */
+.sync-toggle-container {
+    margin-left: auto; /* Push toggle to the right */
+    padding-left: 0.5rem; /* Space before hover buttons */
+    display: flex;
+    align-items: center;
+    cursor: pointer; /* Make the container clickable */
+    margin-right: 0.5rem; /* Space after toggle */
+}
+.sync-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 34px; /* Slightly smaller */
+    height: 20px; /* Slightly smaller */
+    /* cursor: pointer; NO - handled by container */
+}
+.sync-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.sync-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 20px; /* Fully rounded */
+}
+.sync-slider:before {
+    position: absolute;
+    content: "";
+    height: 14px; /* Smaller circle */
+    width: 14px; /* Smaller circle */
+    left: 3px; /* Adjust position */
+    bottom: 3px; /* Adjust position */
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+input:checked + .sync-slider {
+    background-color: var(--green-color); /* Use green when enabled */
+}
+input:checked + .sync-slider:before {
+    transform: translateX(14px); /* Adjust slide distance */
+}
+/* --- End Sync Toggle Styles --- */
+
+
 .connection-actions {
     display: none;
     gap: 0.5rem;
     flex-shrink: 0;
+    /* margin-left: 0.5rem; NO - space handled by toggle container */
 }
 .connection-item:hover .connection-actions {
     display: flex;
@@ -177,6 +485,7 @@ body {
     color: #a0aec0;
     cursor: pointer;
     font-size: 0.9rem;
+    padding: 0.1rem; /* Add padding for easier click */
 }
 .connection-actions button:hover {
     color: var(--primary-color);
@@ -186,12 +495,15 @@ body {
     background-color: var(--primary-color);
     color: white;
 }
-.connection-item .fa-database {
-    color: #a0aec0;
-}
-.connection-item.active .fa-database {
+/* Adjust icon colors for active state */
+.connection-item.active .connection-info i,
+.connection-item.active .connection-actions button {
     color: white;
 }
+.connection-item.active .connection-actions button:hover {
+    color: #e3e8ff; /* Lighter color on hover for active item */
+}
+
 
 .center-panel {
     flex-grow: 1;
@@ -283,6 +595,7 @@ body {
     flex-grow: 1;
     overflow-y: auto;
     display: none;
+    min-height: 0; /* Needed for flex children */
 }
 .workspace-content.active {
     display: flex;
@@ -332,7 +645,7 @@ body {
 .main-content.sidebar-collapsed .panel-toggle-btn.left { display: flex; }
 .main-content .panel-toggle-btn.right { display: flex; }
 
-/* Other styles remain the same */
+/* --- Object Browser Styles --- */
 .object-browser-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -359,7 +672,7 @@ body {
 .object-list-view { display: flex; flex-direction: column; flex-grow: 1; min-height: 0;}
 .object-list-sticky-header {
     position: sticky;
-    top: -1.5rem;
+    top: -1.5rem; /* Adjust based on parent padding */
     margin: -1.5rem -1.5rem 1.5rem -1.5rem;
     padding: 1.5rem 1.5rem 1rem 1.5rem;
     background-color: var(--panel-bg);
@@ -403,10 +716,13 @@ body {
 }
 .card-actions .btn-text:hover { color: var(--primary-color); background-color: #eef2ff; }
 .pagination { display: flex; justify-content: center; align-items: center; padding: 1rem; flex-shrink: 0; border-top: 1px solid var(--border-color); margin-top: auto; }
+
+/* --- SQL Editor Styles --- */
 .sql-editor-area {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: 100%; /* Ensure full height */
+    min-height: 0; /* Allow shrinking */
 }
 .editor-toolbar {
     margin-bottom: 1rem;
@@ -414,16 +730,22 @@ body {
     align-items: center;
     gap: 0.5rem;
     flex-wrap: wrap;
+    flex-shrink: 0; /* Prevent toolbar shrinking */
 }
 #sqlEditorWrapper {
     flex-shrink: 0;
     position: relative;
+    margin-bottom: 1rem; /* Space between editor and results */
+    transition: height 0.3s ease-in-out; /* Add transition for collapse */
+}
+#sqlEditorWrapper.collapsed {
+    height: 40px;
+    margin-bottom: 0.5rem;
 }
 #sqlEditorWrapper.collapsed #sqlEditor {
-    height: 40px;
-}
-#sqlEditorWrapper.collapsed + #sqlResultContainer {
-    flex-grow: 1;
+    height: 100%; /* Fill the collapsed wrapper */
+    min-height: 40px;
+    overflow: hidden; /* Hide scrollbar when collapsed */
 }
 #sqlEditor {
     width: 100%;
@@ -436,8 +758,18 @@ body {
     transition: height 0.3s ease-in-out;
 }
 
+#sqlResultContainer {
+    flex-grow: 1; /* Take remaining space */
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    min-height: 200px; /* Ensure minimum height */
+    margin-top: 0; /* Remove top margin */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Prevent container overflow, let Tabulator handle scroll */
+}
 #sqlResultToolbar {
-    padding: 0.5rem;
+    padding: 0.5rem 1rem;
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -454,15 +786,23 @@ body {
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     padding: 0.5rem;
     z-index: 100;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
 }
 #sqlResultToolbar .dropdown:hover .dropdown-content { display: block; }
-#sqlResultToolbar .dropdown-content label { display: block; white-space: nowrap; }
+#sqlResultToolbar .dropdown-content label { display: block; white-space: nowrap; padding: 0.2rem 0; }
+#sqlResultToolbar .dropdown-content input[type="checkbox"] { margin-right: 0.5rem; }
 #sqlResult {
-    /* Tabulator will be placed here */
-    height: 100%;
+    flex-grow: 1; /* Let Tabulator fill the remaining space */
+    min-height: 0; /* Allow shrinking */
+}
+/* Ensure Tabulator uses the container height */
+.tabulator {
+    height: 100% !important;
 }
 
-/* AI Chat */
+
+/* --- AI Chat Styles --- */
 .ai-chat-area { display: flex; flex-direction: column; height: 100%; }
 .ai-chat-history { flex-grow: 1; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 0.375rem; padding: 1rem; margin-bottom: 1rem; }
 .chat-message { margin-bottom: 1rem; }
@@ -487,6 +827,10 @@ body {
     flex-grow: 1;
     min-height: 0;
 }
+.modal-content.maximized .ai-modal-body {
+    flex-direction: row; /* Side-by-side layout when maximized */
+}
+
 .ai-prompt-section, .ai-related-info-section {
     flex: 1;
     display: flex;
@@ -520,23 +864,348 @@ body {
     font-size: 0.9rem;
 }
 
-.btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    color: white;
-    font-weight: 700;
-    padding: 0.75rem 1rem;
+/* --- Data Sync Styles --- */
+.sync-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* Default to single column */
+    grid-template-rows: auto auto 1fr; /* Allow console to grow */
+    gap: 1.5rem;
+    height: 100%; /* Fill the tab content area */
+}
+@media (min-width: 1024px) { /* Adjust breakpoint as needed */
+    .sync-grid {
+        grid-template-columns: repeat(2, 1fr); /* Two columns on wider screens */
+        grid-template-rows: auto 1fr; /* Control/Config top, Console bottom */
+    }
+    .sync-console {
+        grid-column: 1 / -1; /* Console spans both columns */
+    }
+}
+.sync-section {
+    border: 1px solid var(--border-color);
     border-radius: 0.5rem;
+    padding: 1rem;
+    background-color: #fdfdff;
+    display: flex;
+    flex-direction: column;
+}
+.sync-section h3 {
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+#syncStatus {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.25rem;
+    background-color: #e2e8f0;
+    font-weight: 500;
+    display: flex;
+    align-items: center; /* Vertically align icon and text */
+}
+#syncStatus .fa-spin,
+#syncStatus .fa-check-circle,
+#syncStatus .fa-exclamation-circle,
+#syncStatus .fa-info-circle {
+    margin-right: 0.75rem; /* Space between icon and text */
+    font-size: 1.2em; /* Slightly larger icon */
+}
+#syncStatusText {
+    flex-grow: 1; /* Allow text to take remaining space */
+}
+#lastSyncTime {
+    font-size: 0.8em;
+    color: var(--gray-color);
+    margin-left: 1rem; /* Space before timestamp */
+    white-space: nowrap; /* Prevent wrapping */
+}
+
+#mappingConfigEditor {
+    flex-grow: 1;
+    min-height: 150px; /* Ensure a minimum height */
+    font-family: monospace;
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    resize: vertical;
+    margin-bottom: 1rem; /* Space before save button */
+}
+.sync-console {
+    min-height: 0; /* Critical for flex/grid child */
+    overflow: hidden; /* Prevent overflow */
+    display: flex; /* Make it a flex container */
+    flex-direction: column; /* Stack tabs and content */
+}
+.console-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin: -1rem -1rem 1rem -1rem; /* Adjust padding/margin */
+    padding: 0 1rem;
+    flex-shrink: 0;
+}
+.console-tab {
+    padding: 0.5rem 1rem;
     border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: #718096;
+    font-weight: 500; /* Normal weight for inactive tabs */
+}
+.console-tab.active {
+    border-bottom-color: var(--primary-color);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+.sync-console .console-content {
+    flex-grow: 1; /* Allow content to fill space */
+    overflow-y: auto; /* Enable scrolling */
+    font-family: monospace;
+    font-size: 0.85em;
+    padding: 0; /* Remove padding from workspace-content */
+    display: none; /* Hide inactive */
+    line-height: 1.6;
+    background-color: #f9fafb; /* Light bg for log area */
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    min-height: 0; /* Allow shrinking */
+}
+.sync-console .console-content.active {
+    display: block; /* Show active */
+}
+.sync-console #historyContent ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+.sync-console #historyContent li {
+    border-bottom: 1px dashed var(--border-color);
+    padding: 0.4rem 0;
+    font-size: 0.9em;
+}
+.sync-console #historyContent li:last-child {
+    border-bottom: none;
+}
+.sync-console .history-time { color: #a0aec0; margin-right: 0.5rem; font-weight: bold; }
+.sync-console .history-status-SUCCESS { color: var(--green-color); font-weight: bold; margin-left: 0.5rem;}
+.sync-console .history-status-FAIL { color: var(--red-color); font-weight: bold; margin-left: 0.5rem;}
+.sync-console .history-status-IN_PROGRESS { color: var(--blue-color); font-weight: bold; margin-left: 0.5rem;}
+.sync-console .history-duration { font-size: 0.9em; color: #718096; margin-left: 0.75rem;}
+.sync-console .history-message { display: block; margin-top: 0.2rem; color: #4a5568;}
+
+/* --- End Data Sync Styles --- */
+
+/* --- [NEW v2.3] Graph Explorer Styles --- */
+#schema-sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background-color: var(--dark-panel-bg);
+    color: var(--dark-panel-text);
+    padding: 1rem;
+    overflow-y: auto;
+    height: 100%;
+}
+.schema-section h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    margin: 0 0 0.75rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--dark-border-color);
+}
+.schema-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.schema-tag {
+    background-color: var(--dark-border-color);
+    color: var(--dark-panel-text);
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.25rem;
+    font-size: 0.85em;
     cursor: pointer;
     transition: background-color 0.2s;
-    margin-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 }
+.schema-tag:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+.schema-tag .count {
+    font-size: 0.9em;
+    background-color: #5a67d8;
+    color: white;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+    margin-left: 0.5rem;
+}
+.schema-tags .placeholder {
+    font-size: 0.9em;
+    color: var(--gray-color);
+}
+
+#graph-main {
+    flex-grow: 1; /* Take up remaining space */
+    display: flex;
+    flex-direction: column; /* Stack controls and graph */
+    min-width: 0; /* Prevent flex overflow */
+    height: 100%;
+    background-color: var(--panel-bg);
+}
+.graph-controls {
+    position: relative; /* For search results dropdown */
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+.graph-controls i {
+    color: var(--gray-color);
+    margin-right: 0.75rem;
+}
+#graph-search {
+    width: 100%;
+    font-size: 1.1rem;
+    padding: 0.5rem 0.25rem;
+    border: none;
+    outline: none;
+    background-color: transparent;
+}
+#search-results-container {
+    position: absolute;
+    top: 100%;
+    left: 1rem;
+    right: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    display: none; /* Hidden by default */
+}
+#search-results {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+#search-results li {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+}
+#search-results li:last-child {
+    border-bottom: none;
+}
+#search-results li:hover {
+    background-color: var(--primary-hover);
+    color: white;
+}
+#search-results li .search-result-label {
+    font-size: 0.8em;
+    color: var(--gray-color);
+}
+#search-results li:hover .search-result-label {
+    color: #e3e8ff;
+}
+
+
+#graph-container {
+    flex-grow: 1; /* Fill remaining vertical space */
+    height: 100%; /* vis.js needs explicit height */
+    min-height: 0; /* Prevent overflow */
+    border-bottom: 1px solid var(--border-color);
+}
+.vis-network {
+    outline: none;
+}
+
+/* [NEW v2.3] Graph Details Panel */
+.graph-details-panel {
+    width: 320px;
+    flex-shrink: 0;
+    background-color: var(--panel-bg);
+    border-left: 1px solid var(--border-color);
+    padding: 1.25rem;
+    overflow-y: auto;
+    color: var(--text-color);
+    font-size: 0.9em;
+    height: 100%;
+}
+.graph-details-panel p {
+    color: var(--gray-color);
+    text-align: center;
+    margin-top: 2rem;
+    font-style: italic;
+}
+.property-table {
+    width: 100%;
+    border-collapse: collapse;
+    word-break: break-all; /* Prevent long values from overflowing */
+}
+.property-table .property-table-header {
+    font-size: 1.25em;
+    font-weight: 600;
+    padding: 0.5rem 0.5rem 0.75rem 0.5rem;
+    border-bottom: 2px solid var(--primary-color);
+    text-align: left;
+    color: var(--text-color);
+    word-break: break-word;
+}
+.property-table tr {
+    border-bottom: 1px solid var(--border-color);
+}
+.property-table tr:last-child {
+    border-bottom: none;
+}
+.property-table td {
+    padding: 0.6rem 0.5rem;
+    vertical-align: top;
+}
+.property-table td:first-child {
+    font-weight: 600;
+    color: var(--gray-color);
+    width: 35%; /* Adjust key column width */
+}
+/* --- End Graph Explorer Styles --- */
+
+
+/* --- General Helper Styles --- */
+.btn {
+    display: inline-flex; /* Use inline-flex for auto width */
+    align-items: center;
+    justify-content: center;
+    /* width: 100%; */ /* Remove fixed width */
+    color: white;
+    font-weight: 700;
+    padding: 0.6rem 1.2rem; /* Adjusted padding */
+    border-radius: 0.375rem; /* Slightly smaller radius */
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    margin-top: 1rem; /* Keep margin for spacing */
+    white-space: nowrap; /* Prevent button text wrapping */
+}
+.btn:disabled { background-color: #cbd5e0 !important; color: #718096 !important; cursor: not-allowed; opacity: 0.7; transform: none; box-shadow: none; }
 .btn i { margin-right: 0.5rem; }
 .btn-primary { background-color: var(--primary-color); }
-.btn-primary:hover { background-color: var(--primary-hover); }
+.btn-primary:hover:enabled { background-color: var(--primary-hover); }
+.btn-secondary { background-color: #e2e8f0; color: #4a5568; }
+.btn-secondary:hover:enabled { background-color: #cbd5e0; }
+.btn-success { background-color: var(--green-color); }
+.btn-success:hover:enabled { background-color: #38a169; }
+.btn-danger { background-color: var(--red-color); }
+.btn-danger:hover:enabled { background-color: var(--dark-red-hover); }
+
 
 /* Modal Styles */
 .modal-overlay {
@@ -575,7 +1244,9 @@ body {
     border-bottom: 1px solid var(--border-color);
 }
 .modal-header h2 { margin: 0; }
-.modal-header-actions button { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
+.modal-header-actions button, #closeModalBtn, #closeDetailsBtn, #closeAiModalBtn, #maximizeAiModalBtn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #a0aec0; padding: 0.25rem;}
+.modal-header-actions button:hover, #closeModalBtn:hover, #closeDetailsBtn:hover, #closeAiModalBtn:hover, #maximizeAiModalBtn:hover { color: var(--primary-color); }
+
 .modal-body {
     overflow-y: auto;
     display: flex; /* Make body a flex container */
@@ -593,9 +1264,7 @@ body {
 .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.375rem; }
 .modal-actions { display: flex; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);}
 .btn-group { display: flex; gap: 0.75rem; }
-.btn-secondary { background-color: #e2e8f0; color: #4a5568; }
-.btn-success { background-color: var(--green-color); }
-.btn-danger { background-color: var(--red-color); }
+
 .toast {
     position: fixed;
     bottom: 2rem;
@@ -608,25 +1277,83 @@ body {
     opacity: 0;
     transition: opacity 0.3s, transform 0.3s;
     z-index: 200;
+    pointer-events: none; /* Avoid blocking clicks */
 }
 .toast.show { opacity: 1; transform: translate(-50%, -10px); }
 .toast.success { background-color: var(--green-color); }
 .toast.error { background-color: var(--red-color); }
 
 /* Custom Scrollbars */
-.connection-list::-webkit-scrollbar, .workspace-content::-webkit-scrollbar, .object-list-container::-webkit-scrollbar, .ai-chat-history::-webkit-scrollbar, textarea::-webkit-scrollbar, .details-content::-webkit-scrollbar, .modal-body::-webkit-scrollbar { width: 8px; }
-.connection-list::-webkit-scrollbar-track, .workspace-content::-webkit-scrollbar-track, .object-list-container::-webkit-scrollbar-track, .ai-chat-history::-webkit-scrollbar-track, textarea::-webkit-scrollbar-track, .details-content::-webkit-scrollbar-track, .modal-body::-webkit-scrollbar-track { background: #e2e8f0; }
-.connection-list::-webkit-scrollbar-thumb, .workspace-content::-webkit-scrollbar-thumb, .object-list-container::-webkit-scrollbar-thumb, .ai-chat-history::-webkit-scrollbar-thumb, textarea::-webkit-scrollbar-thumb, .details-content::-webkit-scrollbar-thumb, .modal-body::-webkit-scrollbar-thumb { background-color: #a0aec0; border-radius: 4px; }
+/* Make scrollbars slightly darker/thicker for better visibility */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 5px; }
+::-webkit-scrollbar-thumb { background-color: #a0aec0; border-radius: 5px; border: 2px solid #e2e8f0; }
+::-webkit-scrollbar-thumb:hover { background-color: #718096; }
+/* Dark background scrollbars */
+#schema-sidebar::-webkit-scrollbar-track,
+.sync-console .console-content::-webkit-scrollbar-track,
+.graph-details-panel::-webkit-scrollbar-track {
+    background: var(--dark-panel-bg);
+}
+#schema-sidebar::-webkit-scrollbar-thumb,
+.sync-console .console-content::-webkit-scrollbar-thumb,
+.graph-details-panel::-webkit-scrollbar-thumb {
+    background-color: var(--dark-border-color);
+    border: 2px solid var(--dark-panel-bg);
+}
+#schema-sidebar::-webkit-scrollbar-thumb:hover,
+.sync-console .console-content::-webkit-scrollbar-thumb:hover,
+.graph-details-panel::-webkit-scrollbar-thumb:hover {
+    background-color: #718096;
+}
+/* Details panel uses light scrollbar */
+.graph-details-panel::-webkit-scrollbar-track {
+    background: #e2e8f0;
+}
+.graph-details-panel::-webkit-scrollbar-thumb {
+    background-color: #a0aec0;
+    border: 2px solid #e2e8f0;
+}
+.graph-details-panel::-webkit-scrollbar-thumb:hover {
+    background-color: #718096;
+}
+
 
 @media (max-width: 1024px) {
     .main-content { flex-direction: column; }
     .left-panel, .center-panel { width: 100%; max-width: none; }
-    .details-panel { display: none; }
+    .details-panel { display: none; } /* Hide details panel on smaller screens for simplicity */
+    .main-content .panel-toggle-btn.right { display: none; } /* Hide toggle for details */
 }
 @media (max-width: 768px) {
-    .app-nav { flex-direction: column; padding: 0.5rem 1rem; }
-    .nav-links { margin-top: 0.5rem; }
-    .container { padding: 1rem; }
+    .app-nav { flex-direction: column; padding: 0.5rem 1rem; height: auto; } /* Adjust nav height */
+    .nav-links { margin-top: 0.5rem; flex-wrap: wrap; justify-content: center;}
+    .container { padding: 0; /* Remove padding for mobile graph view */ height: calc(100vh - auto); } /* Adjust container height */
+    /* Ensure Graph Explorer container has no padding on small screens too */
+    .graph-explorer-container {
+        flex-direction: column; /* Stack sidebar and graph */
+        height: calc(100vh - 57px); /* Adjust for potential taller nav */
+    }
+    #schema-sidebar {
+        width: 100%; /* Full width */
+        height: 200px; /* Fixed height, scrollable */
+        border-right: none;
+        border-bottom: 1px solid var(--dark-border-color);
+        flex-shrink: 0;
+    }
+    .graph-controls { padding: 0.75rem 1rem; }
+    #graph-search { font-size: 0.9rem; }
+    #graph-main { padding: 0; /* No padding on main area */ }
+    #graph-container {
+        border-bottom: none; /* Remove bottom border */
+    }
+    .graph-details-panel {
+        width: 100%;
+        height: 250px; /* Fixed height for details on mobile */
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+        flex-shrink: 0;
+    }
 }
 
 .loading-overlay {
@@ -635,14 +1362,14 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(255, 255, 255, 0.7); /* Lighter overlay */
     display: none; /* 默认隐藏 */
     align-items: center;
     justify-content: center;
     z-index: 9999; /* 确保在最顶层 */
 }
 .loading-spinner {
-    color: white;
+    color: var(--primary-color); /* Use primary color */
     text-align: center;
     font-size: 1.2rem;
 }
@@ -652,137 +1379,94 @@ body {
     margin-bottom: 1rem;
 }
 
+/* --- [新增 v2.4] 知识探索页面 详情面板 和 鸟瞰图 样式 --- */
 
-/* Vis Network Tooltip Style */
-div.vis-tooltip {
-    position: absolute;
-    visibility: hidden;
-    padding: 5px;
-    white-space: nowrap;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-size: 14px;
-    color: #000;
-    background-color: #f5f5f5;
-    -moz-border-radius: 3px;
-    -webkit-border-radius: 3px;
-    border-radius: 3px;
-    border: 1px solid #808074;
-    box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
-    pointer-events: none;
-    z-index: 1000;
-}
-
-/* Sync Manager Styles */
-.sync-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto 1fr;
-    gap: 1.5rem;
-    height: 100%;
-}
-.sync-section {
+/* 确保 #graph-main 和 #graph-container 填充可用空间 */
+#graph-main {
+    position: relative; /* 确保 vis-network 的 UI 元素（如按钮）可以正确定位 */
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
-    background-color: #f9fafb;
-    border: 1px solid var(--border-color);
-    border-radius: 0.5rem;
-    padding: 1rem;
-}
-.sync-section h3 {
-    margin: 0 0 1rem 0;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border-color);
-}
-.sync-section .btn-group {
-    display: flex;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-}
-.sync-section button {
-    margin-top: 0;
-}
-#syncStatusDetails {
-    font-size: 0.9em;
-    color: #4a5568;
-    line-height: 1.6;
-}
-#syncStatusDetails strong {
-    color: var(--text-color);
-}
-#syncStatusDetails p {
-    margin: 0.25rem 0;
-}
-
-#mappingConfigEditor {
-    flex-grow: 1;
-    width: 100%;
-    font-family: monospace;
-    border: 1px solid var(--border-color);
-    border-radius: 0.375rem;
-    padding: 0.75rem;
-    resize: none; /* Let the grid handle resizing */
-    margin-bottom: 1rem;
-}
-
-.sync-console {
-    grid-column: 1 / -1; /* Span both columns */
-    padding: 0;
-}
-.sync-console h3 {
-    padding: 1rem 1rem 0 1rem;
-    margin: 0;
-}
-.console-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--border-color);
-    padding: 0 1rem;
-    margin-top: 0.75rem;
-    flex-shrink: 0;
-}
-.console-tab {
-    padding: 0.5rem 1rem;
-    border: none;
-    background: none;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    font-weight: 600;
-    color: #718096;
-}
-.console-tab.active {
-    color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
-}
-.console-content-wrapper {
-    padding: 1rem;
-    flex-grow: 1;
-    overflow-y: auto;
     min-height: 0;
 }
-.console-content {
-    display: none;
+
+#graph-container {
+    flex-grow: 1;
+    border-top: 1px solid var(--border-color);
+    position: relative; /* 确保 vis-network 画布本身是相对定位的 */
 }
-.console-content.active {
-    display: block;
+
+/* 详情面板样式 */
+#graph-details-panel {
+    width: 300px;
+    min-width: 250px;
+    max-width: 30%;
+    background-color: var(--panel-bg);
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
 }
-#liveLogContent {
-    font-family: monospace;
-    font-size: 0.85em;
-    white-space: pre-wrap;
-    word-break: break-all;
-    background: var(--dark-panel-bg);
-    color: var(--dark-panel-text);
-    padding: 0.75rem;
-    border-radius: 0.375rem;
-    height: 100%;
-}
-#historyContent table {
-    width: 100%;
-    font-size: 0.9rem;
-    border-collapse: collapse;
-}
-#historyContent th, #historyContent td {
-    padding: 0.5rem;
-    text-align: left;
+#details-title {
+    margin: 0;
+    padding: 1rem 1.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
     border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
 }
-#historyContent th { font-weight: 600; background-color: #f9fafb;}
+.details-content-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+.details-content-body p {
+    margin-top: 0;
+    color: var(--gray-color);
+}
+.details-content-body .detail-item {
+    margin-bottom: 1rem;
+}
+.details-content-body .detail-item strong {
+    display: block;
+    color: var(--text-color);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+.details-content-body .detail-item span {
+    word-wrap: break-word;
+    color: var(--gray-color);
+}
+.details-content-body .detail-labels .label-tag {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* 鸟瞰图 (Minimap) 容器样式 */
+#graph-overview {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    width: 200px;
+    height: 150px;
+    border: 1px solid var(--border-color);
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 100;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* [新增 v2.4] 确保 vis-network 的缩放按钮显示在最上层 */
+.vis-navigation {
+    z-index: 101 !important;
+}
+
+
+

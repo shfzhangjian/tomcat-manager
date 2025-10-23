@@ -21,13 +21,61 @@ const ui = {
             leftPanelExpandBtn: document.getElementById('leftPanelExpandBtn'),
             loadingOverlay: document.getElementById('loadingOverlay')
         };
+
+        // --- [修正 v2.3] 将全局事件监听器移入 init() 并添加 null 检查 ---
+
+        // 仅在 connectionModal 存在时绑定事件
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', () => ui.hideConnectionModal());
+        }
+        if (this.elements.connectionModal) {
+            this.elements.connectionModal.addEventListener('click', (e) => {
+                if (e.target.id === 'connectionModal') ui.hideConnectionModal();
+            });
+        }
+
+        // 仅在 alertModal 存在时绑定事件
+        const alertOkBtn = document.getElementById('alertOkBtn');
+        if (alertOkBtn) {
+            alertOkBtn.addEventListener('click', () => {
+                if(ui.elements.alertModal) ui.elements.alertModal.style.display = 'none';
+            });
+        }
+
+        // 仅在 confirmModal 存在时绑定事件
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+        if (confirmCancelBtn) {
+            confirmCancelBtn.addEventListener('click', () => {
+                if(ui.elements.confirmModal) ui.elements.confirmModal.style.display = 'none';
+            });
+        }
+
+        // 仅在 aiPromptModal 存在时绑定事件
+        const closeAiModalBtn = document.getElementById('closeAiModalBtn');
+        if (closeAiModalBtn) {
+            closeAiModalBtn.addEventListener('click', () => ui.hideAiPromptModal());
+        }
+        const maximizeAiModalBtn = document.getElementById('maximizeAiModalBtn');
+        if (maximizeAiModalBtn) {
+            maximizeAiModalBtn.addEventListener('click', () => ui.toggleMaximizeAiModal());
+        }
+        if (this.elements.aiPromptModal) {
+            this.elements.aiPromptModal.addEventListener('click', (e) => {
+                if (e.target.id === 'aiPromptModal') ui.hideAiPromptModal();
+            });
+        }
+        // --- 修正结束 ---
     },
 
     showToast(message, type = 'success') {
+        if (!this.elements.toast) return; // 检查 toast 元素是否存在
         this.elements.toast.textContent = message;
         this.elements.toast.className = `toast show ${type}`;
         setTimeout(() => {
-            this.elements.toast.className = 'toast';
+            if (this.elements.toast) {
+                this.elements.toast.className = 'toast';
+            }
         }, 3000);
     },
 
@@ -44,16 +92,26 @@ const ui = {
     },
 
     showAlert(message, title = "提示") {
+        if (!this.elements.alertModal) { // 回退
+            console.warn("Alert Modal not found, using console.warn:", message);
+            return;
+        }
         document.getElementById('alertTitle').textContent = title;
         document.getElementById('alertMessage').textContent = message;
         this.elements.alertModal.style.display = 'flex';
     },
 
     showConfirm(message, onConfirm, title = "请确认") {
+        if (!this.elements.confirmModal) { // 回退
+            console.warn("Confirm Modal not found, auto-confirming:", message);
+            if (onConfirm) onConfirm();
+            return;
+        }
         document.getElementById('confirmTitle').textContent = title;
         document.getElementById('confirmMessage').textContent = message;
 
         const confirmOkBtn = document.getElementById('confirmOkBtn');
+        // 替换按钮以移除旧的监听器
         const newOkBtn = confirmOkBtn.cloneNode(true);
         confirmOkBtn.parentNode.replaceChild(newOkBtn, confirmOkBtn);
 
@@ -66,6 +124,7 @@ const ui = {
     },
 
     showConnectionModal(connData) {
+        if (!this.elements.connectionModal) return;
         const modal = this.elements.connectionModal;
         const title = modal.querySelector('#modalTitle');
 
@@ -88,11 +147,13 @@ const ui = {
     },
 
     hideConnectionModal() {
-        this.elements.connectionModal.style.display = 'none';
+        if (this.elements.connectionModal) {
+            this.elements.connectionModal.style.display = 'none';
+        }
     },
 
-    // **【修正点 A】**: 让函数接受一个 onSave 回调
     showAiPromptModal(objectName, details, onSave) {
+        if (!this.elements.aiPromptModal) return;
         const modal = this.elements.aiPromptModal;
         const topicInput = modal.querySelector('#aiPromptTopicInput');
         const promptContentEl = modal.querySelector('#aiPromptContent');
@@ -111,7 +172,6 @@ const ui = {
         }
         promptContentEl.value = context;
 
-        // ... (填充其他信息逻辑不变) ...
         const relatedContainer = modal.querySelector('#aiRelatedInfoContainer');
         relatedContainer.innerHTML = '';
         if (details.relatedObjectGroups && details.relatedObjectGroups.length > 0) {
@@ -137,9 +197,8 @@ const ui = {
             relatedContainer.innerHTML = '<p>无相关信息。</p>';
         }
 
-        // **【修正点 B】**: 为保存按钮添加一次性事件监听器
         const saveBtn = document.getElementById('saveAiPromptBtn');
-        const newSaveBtn = saveBtn.cloneNode(true); // 替换按钮以移除旧的监听器
+        const newSaveBtn = saveBtn.cloneNode(true);
         saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
 
         newSaveBtn.addEventListener('click', async () => {
@@ -165,10 +224,13 @@ const ui = {
     },
 
     hideAiPromptModal() {
-        this.elements.aiPromptModal.style.display = 'none';
+        if (this.elements.aiPromptModal) {
+            this.elements.aiPromptModal.style.display = 'none';
+        }
     },
 
     toggleMaximizeAiModal() {
+        if (!this.elements.aiPromptModal) return;
         const modalContent = this.elements.aiPromptModal.querySelector('.modal-content');
         const icon = this.elements.aiPromptModal.querySelector('#maximizeAiModalBtn i');
         modalContent.classList.toggle('maximized');
@@ -181,10 +243,14 @@ const ui = {
     },
 
     toggleSidebar(collapse) {
-        this.elements.mainContent.classList.toggle('sidebar-collapsed', collapse);
+        if (this.elements.mainContent) {
+            this.elements.mainContent.classList.toggle('sidebar-collapsed', collapse);
+        }
     },
 
     toggleDetailsPanel(forceState) {
+        if (!this.elements.mainContent) return;
+
         if (typeof forceState === 'boolean') {
             detailsPanelVisible = forceState;
         } else {
@@ -192,22 +258,14 @@ const ui = {
         }
         this.elements.mainContent.classList.toggle('details-visible', detailsPanelVisible);
 
-        const icon = this.elements.rightPanelToggleBtn.querySelector('i');
-        icon.className = detailsPanelVisible ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
+        if (this.elements.rightPanelToggleBtn) {
+            const icon = this.elements.rightPanelToggleBtn.querySelector('i');
+            if (icon) {
+                icon.className = detailsPanelVisible ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
+            }
+        }
     }
 };
 
-// 全局模态框事件监听器
-document.getElementById('closeModalBtn').addEventListener('click', () => ui.hideConnectionModal());
-document.getElementById('connectionModal').addEventListener('click', (e) => {
-    if (e.target.id === 'connectionModal') ui.hideConnectionModal();
-});
-document.getElementById('alertOkBtn').addEventListener('click', () => ui.elements.alertModal.style.display = 'none');
-document.getElementById('confirmCancelBtn').addEventListener('click', () => ui.elements.confirmModal.style.display = 'none');
-document.getElementById('closeAiModalBtn').addEventListener('click', () => ui.hideAiPromptModal());
-document.getElementById('maximizeAiModalBtn').addEventListener('click', () => ui.toggleMaximizeAiModal());
-document.getElementById('aiPromptModal').addEventListener('click', (e) => {
-    if (e.target.id === 'aiPromptModal') ui.hideAiPromptModal();
-});
-
 export { ui };
+
