@@ -1,3 +1,10 @@
+/**
+ * 文件路径: src/main/java/com/zhangjian/tomcatmanager/graph/GraphService.java
+ * 修改说明 v2.8 (JDK 1.8):
+ * 1. 修正 searchNodes 中属性搜索的 Cypher 构建逻辑，不再参数化属性名，改为动态构建并使用反引号包裹。
+ * 2. 在 getDefaultSearchCypher 中添加对中文属性名 "制造商" 的搜索支持。
+ * 3. 确保参数传递正确。
+ */
 package com.zhangjian.tomcatmanager.graph;
 
 import org.neo4j.driver.*;
@@ -11,13 +18,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-// import java.util.stream.Collectors; // No longer needed for stream() on Iterable
 
 @Service
 public class GraphService {
 
     private static final Logger logger = LoggerFactory.getLogger(GraphService.class);
     private final Driver neo4jDriver;
+    private static final int DEFAULT_LABEL_LOAD_LIMIT = 5; // 默认加载数量
 
     // Constructor injection
     public GraphService(Driver neo4jDriver) {
@@ -25,35 +32,61 @@ public class GraphService {
     }
 
     /**
-     * Searches for nodes in Neo4j based on a term, matching against common properties.
+     * Searches for nodes in Neo4j based on a term.
+     * Supports general search or property-specific search (e.g., "propertyName:value").
      * @param term The search term.
      * @return A list of maps, each representing a node with id, labels, and properties.
      */
     public List<Map<String, Object>> searchNodes(String term) {
-        // --- START DEBUG LOGGING ---
         logger.info(">>> GraphService.searchNodes received term: '{}'", term);
-        // --- END DEBUG LOGGING ---
 
-        // Use try-with-resources for automatic session closing
+        String cypher;
+        Map<String, Object> params = new HashMap<>();
+
+        // 检查是否为属性搜索
+        if (term != null && term.contains(":")) {
+            String[] parts = term.split(":", 2);
+            // 确保属性名和值都不为空
+            if (parts.length == 2 && !parts[0].trim().isEmpty() && !parts[1].trim().isEmpty()) {
+                String propName = parts[0].trim();
+                String propValue = parts[1].trim();
+                // **修正:** 动态构建 Cypher 字符串，并用反引号包裹属性名
+                // 注意: 清理属性名以防止注入，例如只允许字母数字下划线或中文
+                String sanitizedPropName = propName.replaceAll("[^\\w\\u4e00-\\u9fa5]", ""); // 允许字母数字下划线和中文
+                if (!sanitizedPropName.isEmpty()) {
+                    cypher = String.format(
+                            "MATCH (n) WHERE toLower(toString(n.`%s`)) CONTAINS toLower($propValue) " +
+                                    "RETURN id(n) AS id, labels(n) AS labels, properties(n) AS properties " +
+                                    "LIMIT 25", sanitizedPropName); // 使用清理后的属性名
+                    params.put("propValue", propValue);
+                    logger.info(">>> Performing property search for property '{}'", sanitizedPropName);
+                } else {
+                    // 无效属性名，回退到通用搜索
+                    cypher = getDefaultSearchCypher();
+                    params.put("term", term); // 仍然使用原始 term 进行通用搜索
+                    logger.info(">>> Invalid property name for search, falling back to general search.");
+                }
+            } else {
+                // 格式无效，回退到通用搜索
+                cypher = getDefaultSearchCypher();
+                params.put("term", term);
+                logger.info(">>> Invalid property search format, falling back to general search.");
+            }
+        } else {
+            // 通用搜索
+            cypher = getDefaultSearchCypher();
+            params.put("term", term == null ? "" : term); // Ensure term is not null for query
+            logger.info(">>> Performing general search.");
+        }
+
+
         try (Session session = neo4jDriver.session()) {
-            // Updated Cypher query for broader search and case-insensitivity
-            String cypher = "MATCH (n) " +
-                    "WHERE toLower(toString(n.name)) CONTAINS toLower($term) " +
-                    "   OR toLower(toString(n.id)) CONTAINS toLower($term) " +
-                    "   OR toLower(toString(n.locationCode)) CONTAINS toLower($term) " + // Added locationCode
-                    // ADDED: Also search if the term matches a label directly
-                    "   OR $term IN labels(n) " +
-                    "RETURN id(n) AS id, labels(n) AS labels, properties(n) AS properties " +
-                    "LIMIT 25"; // Limit results for performance
-
-            // --- START DEBUG LOGGING ---
             logger.info(">>> Executing Cypher query: {}", cypher);
-            logger.info(">>> With parameters: term={}", term);
-            // --- END DEBUG LOGGING ---
+            logger.info(">>> With parameters: {}", params);
 
-            Result result = session.run(cypher, Values.parameters("term", term));
+            Result result = session.run(cypher, params);
             List<Map<String, Object>> nodes = new ArrayList<>();
-            int count = 0; // Count results for logging
+            int count = 0;
             while (result.hasNext()) {
                 Record record = result.next();
                 Map<String, Object> nodeMap = new HashMap<>();
@@ -66,33 +99,89 @@ public class GraphService {
                 nodeMap.put("properties", properties);
                 nodes.add(nodeMap);
                 count++;
-
-                // --- START DEBUG LOGGING (Log first few results) ---
                 if (count <= 3) {
                     logger.debug(">>> Found node: id={}, labels={}, properties={}", nodeId, labels, properties);
                 } else if (count == 4) {
                     logger.debug(">>> (More results follow...)");
                 }
-                // --- END DEBUG LOGGING ---
             }
 
-            // --- START DEBUG LOGGING ---
             logger.info(">>> Query finished. Found {} nodes.", count);
             logger.info(">>> Returning {} nodes to controller.", nodes.size());
-            // --- END DEBUG LOGGING ---
 
             return nodes;
         } catch (Exception e) {
-            // --- START DEBUG LOGGING ---
             logger.error("!!! Error searching nodes in Neo4j: {}", e.getMessage(), e);
-            // --- END DEBUG LOGGING ---
-            // In case of error, return an empty list or throw a custom exception
             return Collections.emptyList();
         }
     }
 
+    // Helper method for the default search Cypher query
+    private String getDefaultSearchCypher() {
+        return "MATCH (n) " +
+                "WHERE toLower(toString(n.name)) CONTAINS toLower($term) " +
+                "   OR toLower(toString(n.id)) CONTAINS toLower($term) " +
+                "   OR toLower(toString(n.`名称`)) CONTAINS toLower($term) " +
+                "   OR toLower(toString(n.`位置编号`)) CONTAINS toLower($term) " +
+                "   OR toLower(toString(n.`制造商`)) CONTAINS toLower($term) " + // **新增: 搜索制造商**
+                "   OR toLower(toString(n.locationCode)) CONTAINS toLower($term) " +
+                "   OR $term IN labels(n) " +
+                "RETURN id(n) AS id, labels(n) AS labels, properties(n) AS properties " +
+                "LIMIT 25";
+    }
+
+    // ... (getNodesByLabel, expandNode, convertResult*, getSchemaInfo, createEmptyGraphData, convertNodeToMap, convertRelationshipToMap 方法保持不变) ...
+
     /**
-     * Expands a node in Neo4j, returning its direct neighbors and relationships in Vis.js format.
+     * NEW: Gets the initial set of nodes for a given label, including their first-level relationships,
+     * and indicates if connected nodes have further relationships.
+     * @param label The node label to query.
+     * @param limit The maximum number of initial nodes to return.
+     * @return A map containing lists of nodes and edges for Vis.js.
+     */
+    public Map<String, List<Map<String, Object>>> getNodesByLabel(String label, int limit) {
+        logger.info(">>> GraphService.getNodesByLabel called for label: {}, limit: {}", label, limit);
+        if (label == null || label.trim().isEmpty()) {
+            logger.warn("Label cannot be empty for getNodesByLabel.");
+            return createEmptyGraphData();
+        }
+        if (limit <= 0) {
+            limit = DEFAULT_LABEL_LOAD_LIMIT;
+        }
+
+        try (Session session = neo4jDriver.session()) {
+            // 使用参数化查询防止标签注入
+            String cypher =
+                    "MATCH (n) WHERE $label IN labels(n) " + // Match initial nodes by label using parameter
+                            "WITH n LIMIT $limit " + // Limit the initial nodes
+                            "OPTIONAL MATCH (n)-[r]-(m) " + // Match their direct relationships and neighbors
+                            "WITH n, r, m, id(n) as nid, id(m) as mid " + // Include IDs for distinct collection
+                            "OPTIONAL MATCH (m)-[r2]-() WHERE id(m) <> nid " + // Check if neighbors have *other* relationships
+                            "RETURN DISTINCT n, r, m, nid, mid, count(DISTINCT r2) > 0 AS mHasMoreRels";
+
+            Map<String, Object> params = new HashMap<>();
+            params.put("label", label);
+            params.put("limit", limit);
+
+            logger.info(">>> Executing Cypher query for getNodesByLabel: {}", cypher);
+            logger.info(">>> With parameters: {}", params);
+            Result result = session.run(cypher, params);
+
+            Map<String, List<Map<String, Object>>> graphData = convertResultWithExpandFlagToVisFormat(result);
+            logger.info(">>> Initial label load query finished. Returning {} nodes and {} edges.",
+                    graphData.get("nodes").size(), graphData.get("edges").size());
+            return graphData;
+
+        } catch (Exception e) {
+            logger.error("!!! Error getting nodes by label '{}' in Neo4j: {}", label, e.getMessage(), e);
+            return createEmptyGraphData();
+        }
+    }
+
+
+    /**
+     * Expands a node in Neo4j, returning its direct neighbors and relationships in Vis.js format,
+     * including a flag indicating if neighbors have further relationships.
      * @param nodeId The internal Neo4j ID of the node to expand.
      * @return A map containing lists of nodes and edges for Vis.js.
      */
@@ -100,33 +189,125 @@ public class GraphService {
         logger.info(">>> GraphService.expandNode received nodeId: {}", nodeId);
         try (Session session = neo4jDriver.session()) {
             // Cypher query to get the node and its direct neighbors and relationships
-            String cypher = "MATCH (n)-[r]-(m) WHERE id(n) = $nodeId RETURN n, r, m";
+            // Also check if the neighbors (m) have more relationships
+            String cypher = "MATCH (n)-[r]-(m) WHERE id(n) = $nodeId " +
+                    "WITH n, r, m, id(n) as nid, id(m) as mid " +
+                    "OPTIONAL MATCH (m)-[r2]-() WHERE id(m) <> nid " + // Check for *other* relationships of m
+                    "RETURN DISTINCT n, r, m, nid, mid, count(DISTINCT r2) > 0 AS mHasMoreRels";
+
             logger.info(">>> Executing Cypher query: {}", cypher);
             logger.info(">>> With parameters: nodeId={}", nodeId);
             Result result = session.run(cypher, Values.parameters("nodeId", nodeId));
-            Map<String, List<Map<String, Object>>> graphData = convertResultToVisFormat(result);
+
+            Map<String, List<Map<String, Object>>> graphData = convertResultWithExpandFlagToVisFormat(result);
             logger.info(">>> Expansion query finished. Returning {} nodes and {} edges.",
                     graphData.get("nodes").size(), graphData.get("edges").size());
             return graphData;
         } catch (Exception e) {
             logger.error("!!! Error expanding node {} in Neo4j: {}", nodeId, e.getMessage(), e);
-            // Return an empty structure in case of error
-            Map<String, List<Map<String, Object>>> emptyResult = new HashMap<>();
-            emptyResult.put("nodes", Collections.emptyList());
-            emptyResult.put("edges", Collections.emptyList());
-            return emptyResult;
+            // 修正: 确保返回正确的类型 Map<String, List<Map<String, Object>>>
+            return createEmptyGraphData();
         }
     }
 
     /**
-     * Gets schema information (labels, relationship types, and counts) from Neo4j.
-     * @return A map containing lists of labels and relationship types with their counts.
+     * Converts Neo4j query results (including the expand flag) into Vis.js compatible format.
+     * @param result The Neo4j Result object.
+     * @return A map containing lists of nodes and edges.
      */
+    private Map<String, List<Map<String, Object>>> convertResultWithExpandFlagToVisFormat(Result result) {
+        Map<String, List<Map<String, Object>>> graphData = new HashMap<>();
+        Set<Long> nodeIdsProcessed = new HashSet<>(); // 跟踪已处理并添加到 nodes 列表的节点ID
+        Set<Long> edgeIdsProcessed = new HashSet<>();
+        List<Map<String, Object>> nodes = new ArrayList<>();
+        List<Map<String, Object>> edges = new ArrayList<>();
+        Map<Long, Boolean> nodeExpandableFlags = new HashMap<>(); // 存储邻居节点的展开标志
+        Map<Long, Map<String, Object>> nodeDataCache = new HashMap<>(); // 缓存节点数据以供后续查找
+        int recordCount = 0;
+
+        while (result.hasNext()) {
+            recordCount++;
+            Record record = result.next();
+
+            Value nValue = record.get("n");
+            Value rValue = record.get("r");
+            Value mValue = record.get("m");
+            boolean mHasMoreRels = record.get("mHasMoreRels").asBoolean(false);
+
+            Node n = null;
+            Node m = null;
+
+            // 处理节点 'n'
+            if (nValue != null && !nValue.isNull() && nValue instanceof NodeValue) {
+                n = nValue.asNode();
+                long nid = n.id();
+                if (!nodeDataCache.containsKey(nid)) {
+                    nodeDataCache.put(nid, convertNodeToMap(n)); // 缓存 'n' 的数据
+                }
+                // 'n' 的 hasMoreRelationships 标志在后面统一处理
+            }
+
+            // 处理节点 'm' (邻居)
+            if (mValue != null && !mValue.isNull() && mValue instanceof NodeValue) {
+                m = mValue.asNode();
+                long mid = m.id();
+                if (!nodeDataCache.containsKey(mid)) {
+                    nodeDataCache.put(mid, convertNodeToMap(m)); // 缓存 'm' 的数据
+                }
+                // 存储或更新 'm' 的可扩展标志
+                // 如果 m 被多次引用，只要有一次 mHasMoreRels 为 true，就标记为 true
+                nodeExpandableFlags.put(mid, nodeExpandableFlags.containsKey(mid) ? (nodeExpandableFlags.get(mid) || mHasMoreRels) : mHasMoreRels);
+            }
+
+            // 处理关系 'r'
+            if (rValue != null && !rValue.isNull() && rValue instanceof RelationshipValue) {
+                Relationship r = rValue.asRelationship();
+                if (edgeIdsProcessed.add(r.id())) {
+                    edges.add(convertRelationshipToMap(r));
+                }
+            }
+        }
+
+        // 统一处理所有缓存的节点数据，添加 hasMoreRelationships 标志并加入最终列表
+        for (Map.Entry<Long, Map<String, Object>> entry : nodeDataCache.entrySet()) {
+            long nodeId = entry.getKey();
+            Map<String, Object> nodeMap = entry.getValue();
+            // 从 nodeExpandableFlags 获取标志，如果不存在则默认为 false
+            boolean hasMore = nodeExpandableFlags.containsKey(nodeId) ? nodeExpandableFlags.get(nodeId) : false;
+            nodeMap.put("hasMoreRelationships", hasMore);
+            if (nodeIdsProcessed.add(nodeId)) { // 避免重复添加
+                nodes.add(nodeMap);
+            }
+        }
+
+
+        logger.debug(">>> Processed {} records from expansion query.", recordCount);
+        graphData.put("nodes", nodes);
+        graphData.put("edges", edges);
+        return graphData;
+    }
+
+
+    /**
+     * Helper to convert a Neo4j Node to a Map, including the expand flag.
+     * Note: This overloaded method might not be strictly needed anymore after refactoring convertResultWithExpandFlagToVisFormat
+     * but kept for potential direct use if needed.
+     */
+    private Map<String, Object> convertNodeToMap(Node node, boolean hasMoreRelationships) {
+        Map<String, Object> nodeMap = convertNodeToMap(node); // Reuse existing conversion
+        nodeMap.put("hasMoreRelationships", hasMoreRelationships);
+        return nodeMap;
+    }
+
+
+    // --- Existing Methods ---
+
     public Map<String, List<Map<String, Object>>> getSchemaInfo() {
+        // ... (existing getSchemaInfo implementation remains the same)
         logger.info(">>> GraphService.getSchemaInfo called.");
         Map<String, List<Map<String, Object>>> schema = new HashMap<>();
-        schema.put("labels", new ArrayList<>());
-        schema.put("relationshipTypes", new ArrayList<>());
+        schema.put("labels", new ArrayList<Map<String, Object>>()); // Use explicit type for JDK 1.8
+        schema.put("relationshipTypes", new ArrayList<Map<String, Object>>()); // Use explicit type for JDK 1.8
 
         try (Session session = neo4jDriver.session()) {
             // Get Node Labels and Counts (Requires APOC for efficient counts)
@@ -195,65 +376,22 @@ public class GraphService {
         return schema;
     }
 
-
-    /**
-     * Converts Neo4j query results into Vis.js compatible format.
-     * @param result The Neo4j Result object.
-     * @return A map containing lists of nodes and edges.
-     */
-    private Map<String, List<Map<String, Object>>> convertResultToVisFormat(Result result) {
-        Map<String, List<Map<String, Object>>> graphData = new HashMap<>();
-        Set<Long> nodeIds = new HashSet<>();
-        Set<Long> edgeIds = new HashSet<>();
-        List<Map<String, Object>> nodes = new ArrayList<>();
-        List<Map<String, Object>> edges = new ArrayList<>();
-        int recordCount = 0;
-
-        while (result.hasNext()) {
-            recordCount++;
-            Record record = result.next();
-
-            // Process node 'n'
-            Value nValue = record.get("n");
-            if (nValue instanceof NodeValue) {
-                Node n = nValue.asNode();
-                if (nodeIds.add(n.id())) { // Add only if not already added
-                    nodes.add(convertNodeToMap(n));
-                }
-            }
-
-            // Process node 'm'
-            Value mValue = record.get("m");
-            if (mValue instanceof NodeValue) {
-                Node m = mValue.asNode();
-                if (nodeIds.add(m.id())) { // Add only if not already added
-                    nodes.add(convertNodeToMap(m));
-                }
-            }
-
-            // Process relationship 'r'
-            Value rValue = record.get("r");
-            if (rValue instanceof RelationshipValue) {
-                Relationship r = rValue.asRelationship();
-                if (edgeIds.add(r.id())) { // Add only if not already added
-                    edges.add(convertRelationshipToMap(r));
-                }
-            }
-        }
-        logger.debug(">>> Processed {} records from expansion query.", recordCount);
-        graphData.put("nodes", nodes);
-        graphData.put("edges", edges);
-        return graphData;
+    // Existing helper methods
+    private Map<String, List<Map<String, Object>>> createEmptyGraphData() {
+        Map<String, List<Map<String, Object>>> emptyResult = new HashMap<>();
+        emptyResult.put("nodes", Collections.<Map<String, Object>>emptyList()); // Explicit type for JDK 1.8
+        emptyResult.put("edges", Collections.<Map<String, Object>>emptyList()); // Explicit type for JDK 1.8
+        return emptyResult;
     }
 
     /**
-     * Helper to convert a Neo4j Node to a Map.
+     * Helper to convert a Neo4j Node to a Map (base conversion without expand flag).
      */
     private Map<String, Object> convertNodeToMap(Node node) {
         Map<String, Object> nodeMap = new HashMap<>();
         nodeMap.put("id", node.id());
-        // FIX: Convert Iterable<String> to List<String> for Java 8 compatibility
         List<String> labels = new ArrayList<>();
+        // Use traditional for loop for JDK 1.8 compatibility
         for (String label : node.labels()) {
             labels.add(label);
         }
@@ -262,9 +400,6 @@ public class GraphService {
         return nodeMap;
     }
 
-    /**
-     * Helper to convert a Neo4j Relationship to a Map.
-     */
     private Map<String, Object> convertRelationshipToMap(Relationship relationship) {
         Map<String, Object> edgeMap = new HashMap<>();
         edgeMap.put("id", relationship.id());
@@ -274,6 +409,5 @@ public class GraphService {
         edgeMap.put("properties", relationship.asMap());
         return edgeMap;
     }
-
 }
 

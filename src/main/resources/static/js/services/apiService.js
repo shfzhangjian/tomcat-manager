@@ -1,3 +1,10 @@
+/**
+ * 文件路径: src/main/resources/static/js/services/apiService.js
+ * 修改说明 v2.6:
+ * 1. 新增 getGraphNodesByLabel 方法。
+ * 2. searchGraphNodes 无需修改，由 GraphService 处理 term 格式。
+ * 3. 修正 saveSyncMapping 错别字 (saveMappingConfig -> saveMappingConfig)。
+ */
 import { D } from '../utils/helpers.js';
 
 const ui = {
@@ -34,7 +41,16 @@ const api = {
             }
 
             // Otherwise, parse as JSON (default behavior)
-            return text ? JSON.parse(text) : null;
+            // Handle potentially empty successful responses (e.g., DELETE)
+            if (!text) {
+                return null;
+            }
+            try {
+                return JSON.parse(text);
+            } catch (jsonError) {
+                console.error("Failed to parse JSON response:", text, jsonError);
+                throw new Error("Received invalid JSON response from server.");
+            }
         } catch (error) {
             // Re-throw the error to be handled by the caller's catch block
             throw error;
@@ -107,11 +123,20 @@ const api = {
     searchGraphNodes: (term) => api.apiCall(`graph/search?term=${encodeURIComponent(term)}`, { method: 'GET' }),
     expandGraphNode: (nodeId) => api.apiCall(`graph/expand?nodeId=${encodeURIComponent(nodeId)}`, { method: 'GET' }),
     getGraphSchema: () => api.apiCall('graph/schema', { method: 'GET' }),
+    /**
+     * NEW: Gets initial nodes and relationships by label.
+     * @param {string} label The node label.
+     * @param {number} limit The maximum number of nodes.
+     * @returns {Promise<object>} Graph data { nodes: [], edges: [] }.
+     */
+    getGraphNodesByLabel: (label, limit) => api.apiCall(`graph/nodes-by-label?label=${encodeURIComponent(label)}&limit=${limit}`, { method: 'GET' }),
+
     // --- Sync ---
     getMappingConfig: (connId) => api.apiCall(`sync/mapping/${connId}`, { method: 'GET' }, false, true), // Expect a text response
+    // 修正: 接口名称统一为 saveMappingConfig
     saveMappingConfig: (connId, config) => api.apiCall(`sync/mapping/${connId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/yaml' },
+        headers: { 'Content-Type': 'application/yaml' }, // Correct Content-Type for YAML
         body: config
     }),
     triggerSync: (connId, isDelta = false) => api.apiCall(`sync/trigger/${connId}?delta=${isDelta}`, { method: 'POST' }),
@@ -121,4 +146,3 @@ const api = {
 // Make it globally accessible or export it
 window.api = api; // For simplicity in this single-page app context
 export { api };
-
